@@ -1,0 +1,257 @@
+/* ===== BioSequence Plugin Styles ===== */
+
+/* Block container */
+.biosequence-block {
+	font-family: var(--font-monospace);
+	background-color: var(--code-background);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px 16px;
+	margin: 8px 0;
+	overflow-x: auto;
+}
+
+/* FASTA header */
+.biosequence-header {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	font-style: italic;
+	margin-bottom: 8px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Toolbar */
+.biosequence-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+/* Type label badge */
+.biosequence-type-label {
+	display: inline-block;
+	font-size: 0.7em;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 2px 8px;
+	border-radius: 4px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+/* Scheme select dropdown */
+.biosequence-scheme-select {
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	padding: 3px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.biosequence-scheme-select:hover {
+	border-color: var(--interactive-accent);
+}
+
+/* Sequence length */
+.biosequence-length {
+	font-size: 0.8em;
+	color: var(--text-muted);
+	margin-left: auto;
+}
+
+/* Sequence block */
+.biosequence-sequence {
+	white-space: pre-wrap;
+	word-break: break-all;
+	margin-bottom: 12px;
+	line-height: 1.8;
+}
+
+/* Each line of residues */
+.biosequence-line {
+	display: flex;
+	align-items: baseline;
+	margin-bottom: 2px;
+}
+
+/* Gutter (position numbers) */
+.biosequence-gutter {
+	display: inline-block;
+	width: 5em;
+	text-align: right;
+	padding-right: 10px;
+	color: var(--text-muted);
+	font-size: 0.8em;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+/* Residue container */
+.biosequence-residues {
+	display: inline;
+	word-break: break-all;
+}
+
+/* Individual residue */
+.biosequence-residue {
+	display: inline-block;
+	width: 1.2em;
+	text-align: center;
+	border-radius: 2px;
+	margin: 0 0.5px;
+	cursor: default;
+	transition: transform 0.1s ease;
+	font-weight: 500;
+	line-height: 1.5;
+}
+
+.biosequence-residue:hover {
+	transform: scale(1.3);
+	z-index: 1;
+	position: relative;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Invalid residue override */
+.biosequence-residue.invalid {
+	background-color: #ff4444 !important;
+	color: #fff !important;
+	text-decoration: underline wavy;
+}
+
+/* Error message */
+.biosequence-error {
+	color: #e53935;
+	font-style: italic;
+	margin: 8px 0;
+}
+
+/* ===== Summary Panel ===== */
+
+.biosequence-summary {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px 16px;
+	margin-top: 8px;
+}
+
+.biosequence-summary-header {
+	font-size: 0.9em;
+	font-weight: 700;
+	color: var(--text-normal);
+	margin-bottom: 10px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Grid layout for property cards */
+.biosequence-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 8px 16px;
+	margin-bottom: 8px;
+}
+
+/* Single property card */
+.biosequence-prop {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px 0;
+}
+
+.biosequence-prop-label {
+	font-size: 0.7em;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+}
+
+.biosequence-prop-value {
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	color: var(--text-normal);
+}
+
+/* Stability indicators */
+.biosequence-prop-value .stable {
+	color: #43a047;
+	font-weight: 600;
+}
+
+.biosequence-prop-value .unstable {
+	color: #e53935;
+	font-weight: 600;
+}
+
+/* Complement display */
+.biosequence-complement {
+	font-family: var(--font-monospace) !important;
+	font-size: 0.85em !important;
+	background-color: var(--background-modifier-hover);
+	padding: 2px 6px;
+	border-radius: 3px;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: default;
+}
+
+/* ===== Composition Table ===== */
+
+.biosequence-composition {
+	margin-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 8px;
+}
+
+.biosequence-composition > summary {
+	font-size: 0.85em;
+	font-weight: 600;
+	color: var(--text-muted);
+	cursor: pointer;
+	user-select: none;
+	padding: 4px 0;
+}
+
+.biosequence-composition > summary:hover {
+	color: var(--text-normal);
+}
+
+.biosequence-composition table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 6px;
+	font-size: 0.85em;
+}
+
+.biosequence-composition th {
+	text-align: left;
+	font-weight: 600;
+	font-size: 0.85em;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.biosequence-composition td {
+	padding: 3px 8px;
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+}
+
+.biosequence-composition tr:hover td {
+	background-color: var(--background-modifier-hover);
+}

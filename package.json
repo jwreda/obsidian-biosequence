@@ -1,0 +1,20 @@
+{
+	"name": "obsidian-biosequence",
+	"version": "0.1.0",
+	"description": "Biological sequence viewer for Obsidian with per-residue coloring and biophysical calculations.",
+	"main": "main.js",
+	"type": "module",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+	},
+	"keywords": ["obsidian", "biology", "sequence", "protein", "DNA", "RNA"],
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^16.11.6",
+		"esbuild": "0.25.5",
+		"obsidian": "latest",
+		"tslib": "2.4.0",
+		"typescript": "^5.8.3"
+	}
+}
