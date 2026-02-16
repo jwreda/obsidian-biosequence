@@ -3,11 +3,16 @@ export interface SequenceSelection {
 	end: number;    // 0-indexed inclusive
 }
 
+export interface SelectionHandlers {
+	cleanup: () => void;
+	selectRange: (start: number, end: number) => void;
+}
+
 export function attachSelectionHandlers(
 	sequenceContainer: HTMLElement,
 	blockContainer: HTMLElement,
 	sequence: string
-): { cleanup: () => void } {
+): SelectionHandlers {
 	let isSelecting = false;
 	let selectionStart = -1;
 	let currentSelection: SequenceSelection | null = null;
@@ -82,6 +87,13 @@ export function attachSelectionHandlers(
 		);
 	}
 
+	function selectRange(start: number, end: number): void {
+		clearSelection();
+		currentSelection = { start, end };
+		highlightRange(start, end);
+		showSelectionBar(currentSelection);
+	}
+
 	function posFromEvent(e: MouseEvent): number | null {
 		const target = e.target as HTMLElement;
 		if (
@@ -93,10 +105,36 @@ export function attachSelectionHandlers(
 		return null;
 	}
 
+	function findNearestResidue(e: MouseEvent): number | null {
+		const residues = getResidueSpans();
+		if (residues.length === 0) return null;
+
+		let minDist = Infinity;
+		let nearestPos: number | null = null;
+
+		for (const res of residues) {
+			const rect = res.getBoundingClientRect();
+			const centerX = rect.left + rect.width / 2;
+			const centerY = rect.top + rect.height / 2;
+			const dist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+
+			if (dist < minDist) {
+				minDist = dist;
+				nearestPos = parseInt(res.dataset.pos ?? "-1", 10);
+			}
+		}
+
+		return nearestPos;
+	}
+
 	function onMouseDown(e: MouseEvent): void {
 		const pos = posFromEvent(e);
-		if (pos === null) return;
-
+		if (pos === null) {
+			if (sequenceContainer.contains(e.target as HTMLElement)) {
+				clearSelection();
+			}
+			return;
+		}
 		e.preventDefault();
 		clearSelection();
 		isSelecting = true;
@@ -107,7 +145,10 @@ export function attachSelectionHandlers(
 	function onMouseMove(e: MouseEvent): void {
 		if (!isSelecting) return;
 
-		const pos = posFromEvent(e);
+		let pos = posFromEvent(e);
+		if (pos === null) {
+			pos = findNearestResidue(e);
+		}
 		if (pos === null) return;
 
 		const rangeStart = Math.min(selectionStart, pos);
@@ -167,5 +208,5 @@ export function attachSelectionHandlers(
 		removeSelectionBar();
 	}
 
-	return { cleanup };
+	return { cleanup, selectRange };
 }

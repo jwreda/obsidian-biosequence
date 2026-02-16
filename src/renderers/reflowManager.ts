@@ -11,6 +11,7 @@ export function createReflowObserver(
 	extraOffsetPx: number = 0
 ): ResizeObserver {
 	const GUTTER_WIDTH_EM = 5;
+	const GUTTER_FONT_SCALE = 0.8; // matches CSS .biosequence-gutter font-size: 0.8em
 	const GUTTER_PADDING_PX = 10;
 	const DEBOUNCE_MS = 150;
 	const THRESHOLD_PX = 5;
@@ -22,7 +23,7 @@ export function createReflowObserver(
 		let availableWidth = containerWidth;
 
 		if (gutterActive) {
-			const gutterPx = GUTTER_WIDTH_EM * fontSize + GUTTER_PADDING_PX;
+			const gutterPx = GUTTER_WIDTH_EM * GUTTER_FONT_SCALE * fontSize + GUTTER_PADDING_PX;
 			availableWidth -= gutterPx;
 		}
 
@@ -82,12 +83,13 @@ export function computeInitialResiduesPerLine(
 	extraOffsetPx: number = 0
 ): number {
 	const GUTTER_WIDTH_EM = 5;
+	const GUTTER_FONT_SCALE = 0.8; // matches CSS .biosequence-gutter font-size: 0.8em
 	const GUTTER_PADDING_PX = 10;
 
 	let availableWidth = container.clientWidth;
 
 	if (gutterActive) {
-		const gutterPx = GUTTER_WIDTH_EM * fontSize + GUTTER_PADDING_PX;
+		const gutterPx = GUTTER_WIDTH_EM * GUTTER_FONT_SCALE * fontSize + GUTTER_PADDING_PX;
 		availableWidth -= gutterPx;
 	}
 

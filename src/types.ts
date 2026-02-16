@@ -72,6 +72,35 @@ export interface ConservationSymbols {
 	gap: string;
 }
 
+/** A single feature in the user's feature library */
+export interface FeatureEntry {
+	id: string;
+	name: string;
+	sequence: string;
+	type: SequenceType;
+	color: string;
+	enabled: boolean;
+}
+
+/** A matched feature instance at a specific position */
+export interface FeatureMatch {
+	featureId: string;
+	name: string;
+	start: number;
+	end: number;
+	color: string;
+	source: "library";
+}
+
+/** Extended Segment with source tracking */
+export interface AnnotatedSegment extends Segment {
+	source: "inline" | "range" | "library";
+	featureId?: string;
+}
+
+/** Display mode for sequence annotations */
+export type AnnotationDisplayMode = "ribbons" | "badges";
+
 /** Plugin settings persisted to data.json */
 export interface BiosequenceSettings {
 	defaultAAScheme: AAColorSchemeId;
@@ -85,6 +114,8 @@ export interface BiosequenceSettings {
 	mafftPath: string;
 	alignmentOutputDir: string;
 	conservationSymbols: ConservationSymbols;
+	featureLibrary: FeatureEntry[];
+	annotationDisplayMode: AnnotationDisplayMode;
 }
 
 /** Amino acid composition result */
@@ -156,4 +187,6 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 		mismatch: "X",
 		gap: "-",
 	},
+	featureLibrary: [],
+	annotationDisplayMode: "ribbons" as AnnotationDisplayMode,
 };

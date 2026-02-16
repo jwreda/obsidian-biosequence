@@ -1,7 +1,9 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type BiosequencePlugin from "./main";
-import { AAColorSchemeId, NucleotideColorSchemeId } from "./types";
+import { AAColorSchemeId, NucleotideColorSchemeId, AnnotationDisplayMode, FeatureEntry } from "./types";
 import { getAASchemeList, getNucleotideSchemeList } from "./colorSchemes/index";
+import { FeatureEditorModal } from "./features/FeatureEditorModal";
+import { FeatureImportModal } from "./features/FeatureImportModal";
 
 export class BiosequenceSettingTab extends PluginSettingTab {
 	plugin: BiosequencePlugin;
@@ -123,6 +125,20 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl)
+			.setName("Annotation display")
+			.setDesc("How to show feature annotations on sequences")
+			.addDropdown((dropdown) => {
+				dropdown.addOption("ribbons", "Ribbons (below each line)");
+				dropdown.addOption("badges", "Compact Badges (right side)");
+				dropdown
+					.setValue(this.plugin.settings.annotationDisplayMode)
+					.onChange(async (value) => {
+						this.plugin.settings.annotationDisplayMode = value as AnnotationDisplayMode;
+						await this.plugin.saveSettings();
+					});
+			});
+
 		containerEl.createEl("h2", { text: "Alignment (MAFFT)" });
 
 		new Setting(containerEl)
@@ -153,7 +169,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h3", { text: "Conservation Symbols" });
 		containerEl.createEl("p", {
-			text: "Characters displayed in the conservation row between aligned sequences. Each field accepts a single character.",
+			text: "Characters displayed in the conservation row between aligned sequences. Each field accepts a single character. Use a space to leave a position blank.",
 			cls: "setting-item-description",
 		});
 
@@ -161,14 +177,14 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Identity")
-			.setDesc("Both residues are identical (default: |)")
+			.setDesc("Both residues are identical (default: |). Use a space for blank.")
 			.addText((text) =>
 				text
 					.setValue(symbols.identity)
 					.setPlaceholder("|")
 					.onChange(async (value) => {
-						if (value.length === 1) {
-							this.plugin.settings.conservationSymbols.identity = value;
+						if (value.length <= 1) {
+							this.plugin.settings.conservationSymbols.identity = value || " ";
 							await this.plugin.saveSettings();
 						}
 					})
@@ -176,14 +192,14 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Similar")
-			.setDesc("Strong similarity, BLOSUM62 groups (default: :)")
+			.setDesc("Strong similarity, BLOSUM62 groups (default: :). Use a space for blank.")
 			.addText((text) =>
 				text
 					.setValue(symbols.similar)
 					.setPlaceholder(":")
 					.onChange(async (value) => {
-						if (value.length === 1) {
-							this.plugin.settings.conservationSymbols.similar = value;
+						if (value.length <= 1) {
+							this.plugin.settings.conservationSymbols.similar = value || " ";
 							await this.plugin.saveSettings();
 						}
 					})
@@ -191,14 +207,14 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Weak")
-			.setDesc("Weak similarity (default: .)")
+			.setDesc("Weak similarity (default: .). Use a space for blank.")
 			.addText((text) =>
 				text
 					.setValue(symbols.weak)
 					.setPlaceholder(".")
 					.onChange(async (value) => {
-						if (value.length === 1) {
-							this.plugin.settings.conservationSymbols.weak = value;
+						if (value.length <= 1) {
+							this.plugin.settings.conservationSymbols.weak = value || " ";
 							await this.plugin.saveSettings();
 						}
 					})
@@ -206,14 +222,14 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Mismatch")
-			.setDesc("Both residues present but different (default: X)")
+			.setDesc("Both residues present but different (default: X). Use a space for blank.")
 			.addText((text) =>
 				text
 					.setValue(symbols.mismatch)
 					.setPlaceholder("X")
 					.onChange(async (value) => {
-						if (value.length === 1) {
-							this.plugin.settings.conservationSymbols.mismatch = value;
+						if (value.length <= 1) {
+							this.plugin.settings.conservationSymbols.mismatch = value || " ";
 							await this.plugin.saveSettings();
 						}
 					})
@@ -221,17 +237,148 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Gap")
-			.setDesc("At least one sequence has a gap (default: -)")
+			.setDesc("At least one sequence has a gap (default: -). Use a space for blank.")
 			.addText((text) =>
 				text
 					.setValue(symbols.gap)
 					.setPlaceholder("-")
 					.onChange(async (value) => {
-						if (value.length === 1) {
-							this.plugin.settings.conservationSymbols.gap = value;
+						if (value.length <= 1) {
+							this.plugin.settings.conservationSymbols.gap = value || " ";
 							await this.plugin.saveSettings();
 						}
 					})
 			);
+
+		// Feature Library section
+		this.renderFeatureLibrary(containerEl);
+	}
+
+	private renderFeatureLibrary(containerEl: HTMLElement): void {
+		containerEl.createEl("h2", { text: "Feature Library" });
+		containerEl.createEl("p", {
+			text: "Define sequences to automatically highlight on rendered sequences. Matched by exact substring.",
+			cls: "setting-item-description",
+		});
+
+		// Toolbar
+		const toolbar = containerEl.createDiv({ cls: "biosequence-feature-toolbar" });
+
+		const selectAllBtn = toolbar.createEl("button", { text: "Select All" });
+		selectAllBtn.addEventListener("click", async () => {
+			for (const f of this.plugin.settings.featureLibrary) f.enabled = true;
+			await this.plugin.saveSettings();
+			this.display();
+		});
+
+		const deselectAllBtn = toolbar.createEl("button", { text: "Deselect All" });
+		deselectAllBtn.addEventListener("click", async () => {
+			for (const f of this.plugin.settings.featureLibrary) f.enabled = false;
+			await this.plugin.saveSettings();
+			this.display();
+		});
+
+		const addBtn = toolbar.createEl("button", { text: "Add Feature", cls: "mod-cta" });
+		addBtn.addEventListener("click", () => {
+			new FeatureEditorModal(this.app, null, async (feature) => {
+				this.plugin.settings.featureLibrary.push(feature);
+				await this.plugin.saveSettings();
+				this.display();
+			}).open();
+		});
+
+		const importBtn = toolbar.createEl("button", { text: "Import" });
+		importBtn.addEventListener("click", () => {
+			new FeatureImportModal(this.app, async (features) => {
+				this.plugin.settings.featureLibrary.push(...features);
+				await this.plugin.saveSettings();
+				this.display();
+			}).open();
+		});
+
+		// Feature list
+		const listContainer = containerEl.createDiv({ cls: "biosequence-feature-list" });
+
+		if (this.plugin.settings.featureLibrary.length === 0) {
+			listContainer.createEl("p", {
+				text: "No features defined. Click 'Add Feature' or 'Import' to get started.",
+				cls: "setting-item-description",
+			});
+			return;
+		}
+
+		for (const feature of this.plugin.settings.featureLibrary) {
+			this.renderFeatureRow(listContainer, feature);
+		}
+	}
+
+	private renderFeatureRow(container: HTMLElement, feature: FeatureEntry): void {
+		const row = container.createDiv({ cls: "biosequence-feature-row" });
+
+		// Enable checkbox
+		const checkbox = row.createEl("input", { type: "checkbox" }) as HTMLInputElement;
+		checkbox.checked = feature.enabled;
+		checkbox.addEventListener("change", async () => {
+			feature.enabled = checkbox.checked;
+			await this.plugin.saveSettings();
+		});
+
+		// Color swatch + hidden color input
+		const swatch = row.createDiv({ cls: "biosequence-feature-swatch" });
+		swatch.style.backgroundColor = feature.color;
+
+		const colorInput = row.createEl("input", { type: "color" }) as HTMLInputElement;
+		colorInput.value = feature.color;
+		colorInput.style.display = "none";
+		colorInput.addEventListener("input", async () => {
+			feature.color = colorInput.value;
+			swatch.style.backgroundColor = colorInput.value;
+			await this.plugin.saveSettings();
+		});
+		swatch.addEventListener("click", () => colorInput.click());
+
+		// Name
+		row.createSpan({ cls: "biosequence-feature-name", text: feature.name });
+
+		// Sequence preview
+		const seqPreview =
+			feature.sequence.length > 20
+				? feature.sequence.substring(0, 20) + "\u2026"
+				: feature.sequence;
+		row.createSpan({ cls: "biosequence-feature-seq", text: seqPreview });
+
+		// Type badge
+		row.createSpan({
+			cls: "biosequence-feature-type",
+			text: feature.type.toUpperCase(),
+		});
+
+		// Edit button
+		const editBtn = row.createEl("button", { cls: "biosequence-feature-btn", text: "Edit" });
+		editBtn.addEventListener("click", () => {
+			new FeatureEditorModal(this.app, feature, async (updated) => {
+				const idx = this.plugin.settings.featureLibrary.findIndex(
+					(f) => f.id === updated.id
+				);
+				if (idx >= 0) {
+					this.plugin.settings.featureLibrary[idx] = updated;
+				}
+				await this.plugin.saveSettings();
+				this.display();
+			}).open();
+		});
+
+		// Delete button
+		const deleteBtn = row.createEl("button", {
+			cls: "biosequence-feature-btn biosequence-feature-btn-danger",
+			text: "Del",
+		});
+		deleteBtn.addEventListener("click", async () => {
+			this.plugin.settings.featureLibrary = this.plugin.settings.featureLibrary.filter(
+				(f) => f.id !== feature.id
+			);
+			await this.plugin.saveSettings();
+			this.display();
+		});
 	}
 }

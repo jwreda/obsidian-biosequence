@@ -1,5 +1,7 @@
 import {
 	AAColorSchemeId,
+	AnnotatedSegment,
+	AnnotationDisplayMode,
 	BiosequenceSettings,
 	ColorScheme,
 	ParsedSequence,
@@ -17,7 +19,8 @@ import {
 	colorizeSegments,
 } from "../parsing/segmentParser";
 import { attachSelectionHandlers } from "./selectionHandler";
-import { renderSegmentTrack } from "./segmentTrack";
+import { renderLineRibbons, renderBadgeBar, renderAnnotationLegend } from "./annotationRenderer";
+import { matchFeatures, mergeSegments } from "../features/featureMatcher";
 import {
 	createReflowObserver,
 	computeInitialResiduesPerLine,
@@ -38,7 +41,7 @@ function parseAASequence(source: string): ParsedSequence {
 	const nonHeaderLines = lines.filter((l) => !l.startsWith(">"));
 
 	// Check for --- delimiter (Approach B: range annotations)
-	const delimiterIdx = nonHeaderLines.indexOf("---");
+	const delimiterIdx = nonHeaderLines.findIndex((l) => l.trim() === "---");
 	let seqLines: string[];
 	let annotationLines: string[] = [];
 	let segments: Segment[] = [];
@@ -216,23 +219,25 @@ function renderLegend(
 }
 
 function renderColoredSequence(
-	container: HTMLElement,
+	seqDiv: HTMLElement,
 	sequence: string,
 	scheme: ColorScheme,
 	settings: BiosequenceSettings,
 	invalidPositions: number[],
-	residuesPerLine: number
-): HTMLElement {
+	residuesPerLine: number,
+	allSegments: AnnotatedSegment[],
+	displayMode: AnnotationDisplayMode,
+	selectRange: (start: number, end: number) => void
+): void {
 	const invalidSet = new Set(invalidPositions);
-	const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
-	seqDiv.style.fontSize = `${settings.sequenceFontSize}px`;
-
 	const lineCount = Math.ceil(sequence.length / residuesPerLine);
 
 	for (let lineIdx = 0; lineIdx < lineCount; lineIdx++) {
 		const start = lineIdx * residuesPerLine;
 		const end = Math.min(start + residuesPerLine, sequence.length);
-		const lineDiv = seqDiv.createDiv({ cls: "biosequence-line" });
+
+		const lineWrapper = seqDiv.createDiv({ cls: "biosequence-line-wrapper" });
+		const lineDiv = lineWrapper.createDiv({ cls: "biosequence-line" });
 
 		if (settings.showPositionNumbers) {
 			lineDiv.createSpan({
@@ -251,12 +256,22 @@ function renderColoredSequence(
 			const textColor =
 				scheme.textColors?.[ch] ?? autoContrast(bgColor);
 
+			// Build tooltip with feature names at this position
+			const featuresAtPos = allSegments.filter(
+				(s) => s.start <= i && s.end > i
+			);
+			let title = `${ch} (pos ${i + 1})`;
+			if (featuresAtPos.length > 0) {
+				const featureNames = featuresAtPos.map((f) => f.name).join(", ");
+				title += ` | ${featureNames}`;
+			}
+
 			const span = residuesSpan.createSpan({
 				cls: "biosequence-residue",
 				text: ch,
-				title: `${ch} (pos ${i + 1})`,
+				title,
 			});
-			span.dataset.pos = String(i);
+			span.dataset["pos"] = String(i);
 			span.style.backgroundColor = bgColor;
 			span.style.color = textColor;
 
@@ -264,9 +279,27 @@ function renderColoredSequence(
 				span.addClass("invalid");
 			}
 		}
+
+		// Render ribbon annotations for this line
+		if (allSegments.length > 0 && displayMode === "ribbons") {
+			renderLineRibbons(
+				lineWrapper,
+				lineDiv,
+				seqDiv,
+				allSegments,
+				start,
+				end,
+				settings.showPositionNumbers,
+				settings.sequenceFontSize,
+				selectRange
+			);
+		}
 	}
 
-	return seqDiv;
+	// Render badge bar after all lines (badge mode only)
+	if (allSegments.length > 0 && displayMode === "badges") {
+		renderBadgeBar(seqDiv, allSegments, selectRange);
+	}
 }
 
 function renderSummaryPanel(
@@ -363,6 +396,10 @@ export function renderAminoAcidBlock(
 		return;
 	}
 
+	// Match library features and merge with inline/range segments
+	const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, "aa");
+	const allSegments = mergeSegments(parsed.segments, featureMatches);
+
 	let currentSchemeId = settings.defaultAAScheme;
 	let selectionCleanup: (() => void) | null = null;
 
@@ -395,16 +432,11 @@ export function renderAminoAcidBlock(
 
 		renderLegend(container, currentSchemeId);
 
-		const seqDiv = renderColoredSequence(
-			container,
-			parsed.sequence,
-			scheme,
-			settings,
-			parsed.invalidPositions,
-			residuesPerLine
-		);
+		// Create seqDiv first, attach selection handlers (they query DOM dynamically),
+		// then populate sequence lines with selectRange available for annotations
+		const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
+		seqDiv.style.fontSize = `${settings.sequenceFontSize}px`;
 
-		// Attach selection handlers
 		const selection = attachSelectionHandlers(
 			seqDiv,
 			container,
@@ -412,15 +444,21 @@ export function renderAminoAcidBlock(
 		);
 		selectionCleanup = selection.cleanup;
 
-		// Render segment track
-		if (parsed.segments.length > 0) {
-			renderSegmentTrack(
-				container,
-				seqDiv,
-				parsed.segments,
-				parsed.sequence.length,
-				settings.showPositionNumbers
-			);
+		renderColoredSequence(
+			seqDiv,
+			parsed.sequence,
+			scheme,
+			settings,
+			parsed.invalidPositions,
+			residuesPerLine,
+			allSegments,
+			settings.annotationDisplayMode,
+			selection.selectRange
+		);
+
+		// Render annotation legend
+		if (allSegments.length > 0) {
+			renderAnnotationLegend(container, allSegments, seqDiv, selection.selectRange);
 		}
 
 		const props = calculateProteinProperties(

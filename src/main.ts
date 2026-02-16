@@ -1,5 +1,5 @@
 import { Notice, Platform, Plugin } from "obsidian";
-import { BiosequenceSettings, DEFAULT_SETTINGS } from "./types";
+import { BiosequenceSettings, DEFAULT_SETTINGS, FeatureEntry } from "./types";
 import { BiosequenceSettingTab } from "./settings";
 import { renderAminoAcidBlock } from "./renderers/AminoAcidRenderer";
 import { renderNucleotideBlock } from "./renderers/NucleotideRenderer";
@@ -125,6 +125,19 @@ export default class BiosequencePlugin extends Plugin {
 			DEFAULT_SETTINGS.conservationSymbols,
 			saved?.conservationSymbols
 		);
+		// Ensure featureLibrary entries have all required fields
+		if (Array.isArray(saved?.featureLibrary)) {
+			this.settings.featureLibrary = saved.featureLibrary.map(
+				(entry: Partial<FeatureEntry>) => ({
+					id: entry.id ?? crypto.randomUUID(),
+					name: entry.name ?? "Unnamed",
+					sequence: entry.sequence ?? "",
+					type: entry.type ?? "aa",
+					color: entry.color ?? "#7eb8da",
+					enabled: entry.enabled ?? true,
+				})
+			);
+		}
 	}
 
 	async saveSettings(): Promise<void> {

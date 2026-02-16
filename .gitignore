@@ -13,3 +13,7 @@ node_modules/
 
 # Plugin data (generated at runtime)
 data.json
+
+# Claude Code agent files (local only)
+CLAUDE.md
+.claude/

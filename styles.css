@@ -260,6 +260,14 @@
 
 .biosequence-alignment .biosequence-alignment-chunk {
 	margin-bottom: 12px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--text-faint);
+	opacity: 1;
+}
+
+.biosequence-alignment .biosequence-alignment-chunk:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
 }
 
 .biosequence-alignment .biosequence-alignment-row {
@@ -496,37 +504,47 @@
 	background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* ===== Segment Track (Feature 7) ===== */
+/* ===== Annotation Ribbons & Badges ===== */
 
-.biosequence-segment-track {
-	position: relative;
-	height: 28px;
-	margin: 8px 0 4px;
-	border-radius: 4px;
-	background-color: var(--background-modifier-hover);
-	overflow: hidden;
+/* Line wrapper for residues + ribbons */
+.biosequence-line-wrapper {
+	margin-bottom: 2px;
 }
 
-.biosequence-segment {
-	position: absolute;
-	top: 0;
-	height: 100%;
-	border-radius: 3px;
+/* Ribbon row below a sequence line */
+.biosequence-ribbon-row {
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	min-height: 16px;
+	margin-bottom: 1px;
+}
+
+/* Individual ribbon bar */
+.biosequence-ribbon {
+	height: 14px;
+	border-radius: 3px;
+	display: inline-flex;
+	align-items: center;
 	overflow: hidden;
-	cursor: default;
+	cursor: pointer;
 	transition: filter 0.15s ease;
 	box-sizing: border-box;
 	border: 1px solid rgba(0, 0, 0, 0.1);
+	flex-shrink: 0;
 }
 
-.biosequence-segment:hover {
+.biosequence-ribbon:hover,
+.biosequence-ribbon-hover {
 	filter: brightness(1.15);
 }
 
-.biosequence-segment-label {
+/* Dashed border for library-sourced features */
+.biosequence-ribbon-library {
+	border-left: 3px dashed rgba(0, 0, 0, 0.3);
+}
+
+/* Label text inside ribbon */
+.biosequence-ribbon-label {
 	font-size: 0.65em;
 	font-weight: 600;
 	color: #fff;
@@ -537,8 +555,322 @@
 	padding: 0 4px;
 }
 
+/* Compact badge container */
+.biosequence-badges {
+	display: inline-flex;
+	gap: 6px;
+	margin-left: 12px;
+	flex-shrink: 0;
+}
+
+/* Individual badge */
+.biosequence-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	cursor: default;
+	font-size: 0.75em;
+}
+
+.biosequence-badge:hover {
+	opacity: 0.8;
+}
+
+/* Colored dot in badge */
+.biosequence-badge-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* Badge text */
+.biosequence-badge-text {
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+/* Badge bar container (rendered once below all sequence lines) */
+.biosequence-badge-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 6px;
+	padding-top: 6px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.biosequence-badge-bar .biosequence-badge {
+	cursor: pointer;
+}
+
+/* Annotation legend */
+.biosequence-annotation-legend {
+	margin-top: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-secondary);
+}
+
+.biosequence-annotation-legend > summary {
+	font-size: 0.8em;
+	font-weight: 600;
+	color: var(--text-muted);
+	cursor: pointer;
+	user-select: none;
+	padding: 6px 10px;
+}
+
+.biosequence-annotation-legend > summary:hover {
+	color: var(--text-normal);
+}
+
+.biosequence-annotation-legend-content {
+	padding: 6px 10px 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 12px;
+}
+
+.biosequence-annotation-legend-item {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	padding: 2px 4px;
+	border-radius: 3px;
+	transition: background-color 0.15s ease;
+}
+
+.biosequence-annotation-legend-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.biosequence-annotation-swatch {
+	display: inline-block;
+	width: 14px;
+	height: 10px;
+	border-radius: 2px;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	flex-shrink: 0;
+}
+
+.biosequence-annotation-swatch-library {
+	border-left: 2px dashed rgba(0, 0, 0, 0.3);
+}
+
+.biosequence-annotation-legend-text {
+	font-size: 0.75em;
+	color: var(--text-muted);
+}
+
+.biosequence-annotation-source-tag {
+	font-size: 0.6em;
+	font-weight: 600;
+	padding: 0 4px;
+	border-radius: 2px;
+	background-color: var(--background-modifier-hover);
+	color: var(--text-faint);
+	margin-left: 2px;
+}
+
+/* Residue highlight on hover (used by ribbons, badges, and legend) */
 .biosequence-residue.segment-highlight {
-	outline: 2px solid rgba(255, 255, 255, 0.5);
-	outline-offset: -1px;
-	filter: brightness(1.1);
+	box-shadow: 0 0 0 2px var(--segment-color, rgba(255, 255, 255, 0.7));
+	filter: brightness(1.15);
+	z-index: 2;
+	position: relative;
+}
+
+/* ===== Feature Library Settings ===== */
+
+.biosequence-feature-toolbar {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+	flex-wrap: wrap;
+}
+
+.biosequence-feature-toolbar button {
+	font-size: 0.85em;
+	padding: 4px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.biosequence-feature-toolbar button:hover {
+	border-color: var(--interactive-accent);
+	background-color: var(--background-modifier-hover);
+}
+
+.biosequence-feature-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 4px;
+	margin-bottom: 16px;
+}
+
+.biosequence-feature-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 0.85em;
+}
+
+.biosequence-feature-row:last-child {
+	border-bottom: none;
+}
+
+.biosequence-feature-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.biosequence-feature-swatch {
+	width: 18px;
+	height: 18px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.biosequence-feature-swatch:hover {
+	border-color: var(--interactive-accent);
+}
+
+.biosequence-feature-name {
+	font-weight: 600;
+	min-width: 100px;
+	max-width: 150px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.biosequence-feature-seq {
+	font-family: var(--font-monospace);
+	color: var(--text-muted);
+	font-size: 0.9em;
+	flex: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 80px;
+}
+
+.biosequence-feature-type {
+	font-size: 0.7em;
+	font-weight: 700;
+	padding: 1px 6px;
+	border-radius: 3px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	flex-shrink: 0;
+}
+
+.biosequence-feature-btn {
+	font-size: 0.8em;
+	padding: 2px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 3px;
+	background-color: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.biosequence-feature-btn:hover {
+	color: var(--text-normal);
+	border-color: var(--interactive-accent);
+}
+
+.biosequence-feature-btn-danger:hover {
+	color: #e53935;
+	border-color: #e53935;
+}
+
+/* Feature editor modal */
+.biosequence-feature-editor-textarea {
+	width: 100%;
+	min-height: 80px;
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	resize: vertical;
+}
+
+.biosequence-feature-editor-textarea:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+.biosequence-feature-editor-actions {
+	text-align: right;
+	margin-top: 16px;
+}
+
+/* Import modal */
+.biosequence-import-help {
+	margin-bottom: 12px;
+	font-size: 0.85em;
+}
+
+.biosequence-import-help > summary {
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.biosequence-import-help pre {
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	padding: 8px;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	overflow-x: auto;
+}
+
+.biosequence-import-textarea {
+	width: 100%;
+	min-height: 150px;
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	resize: vertical;
+	margin-bottom: 8px;
+}
+
+.biosequence-import-textarea:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+.biosequence-import-preview {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	padding: 4px 0;
+	min-height: 1.5em;
+}
+
+.biosequence-import-preview-error {
+	color: #e53935;
+}
+
+.biosequence-import-actions {
+	text-align: right;
+	margin-top: 12px;
 }

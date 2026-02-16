@@ -19,6 +19,7 @@ import {
 	createReflowObserver,
 	computeInitialResiduesPerLine,
 } from "./reflowManager";
+import { AA_LEGEND_DATA, NUCLEOTIDE_LEGEND_DATA } from "../colorSchemes/legendData";
 
 const VALID_DNA = new Set("ATGC".split(""));
 
@@ -142,6 +143,61 @@ function renderToolbar(
 		cls: "biosequence-length",
 		text: `(alignment: ${alignmentLength} pos | seq1: ${seq1Length} ${unitLabel} | seq2: ${seq2Length} ${unitLabel})`,
 	});
+}
+
+/**
+ * Render the color scheme legend for the alignment view.
+ */
+function renderLegend(
+	container: HTMLElement,
+	detectedType: SequenceType,
+	schemeId: string
+): void {
+	const metadata =
+		detectedType === "aa"
+			? AA_LEGEND_DATA[schemeId as AAColorSchemeId]
+			: NUCLEOTIDE_LEGEND_DATA[schemeId as NucleotideColorSchemeId];
+	if (!metadata) return;
+
+	const details = container.createEl("details", {
+		cls: "biosequence-legend",
+	});
+	details.createEl("summary", { text: "Color Scheme Legend" });
+
+	const content = details.createDiv({ cls: "biosequence-legend-content" });
+
+	if (metadata.legendType === "categorical" && metadata.groups) {
+		const grid = content.createDiv({ cls: "biosequence-legend-grid" });
+		for (const group of metadata.groups) {
+			const entry = grid.createDiv({ cls: "biosequence-legend-entry" });
+			const swatch = entry.createDiv({ cls: "biosequence-legend-swatch" });
+			swatch.style.backgroundColor = group.color;
+			swatch.style.color = group.textColor;
+			swatch.textContent = group.residues.join("");
+			entry.createSpan({
+				cls: "biosequence-legend-label",
+				text: group.label,
+			});
+		}
+	} else if (
+		metadata.legendType === "spectrum" &&
+		metadata.spectrumLabel &&
+		metadata.spectrumColors
+	) {
+		const spectrum = content.createDiv({ cls: "biosequence-legend-spectrum" });
+		spectrum.createSpan({
+			cls: "biosequence-legend-spectrum-label",
+			text: metadata.spectrumLabel.low,
+		});
+		const bar = spectrum.createDiv({
+			cls: "biosequence-legend-spectrum-bar",
+		});
+		bar.style.background = `linear-gradient(to right, ${metadata.spectrumColors.low}, ${metadata.spectrumColors.high})`;
+		spectrum.createSpan({
+			cls: "biosequence-legend-spectrum-label",
+			text: metadata.spectrumLabel.high,
+		});
+	}
 }
 
 /**
@@ -394,6 +450,8 @@ export function renderAlignmentBlock(
 				render(residuesPerLine);
 			}
 		);
+
+		renderLegend(container, detectedType, currentSchemeId);
 
 		const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
 		seqDiv.style.fontSize = `${settings.sequenceFontSize}px`;
