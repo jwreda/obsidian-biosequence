@@ -2,7 +2,7 @@
 	"id": "biosequence",
 	"name": "BioSequence",
 	"version": "0.1.0",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "1.0.0",
 	"description": "Render amino acid, DNA, and RNA sequences with per-residue coloring and biophysical property calculations.",
 	"author": "Joe Reda",
 	"isDesktopOnly": false
