@@ -79,8 +79,11 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "Display" });
 
 		new Setting(containerEl)
-			.setName("Residues per line")
-			.setDesc("Number of residues per line before wrapping (default: 60)")
+			.setName("Max residues per line")
+			.setDesc(
+				"Maximum residues per line (default: 60). " +
+				"The actual count auto-adjusts to fit the container width."
+			)
 			.addText((text) =>
 				text
 					.setValue(String(this.plugin.settings.residuesPerLine))
@@ -115,6 +118,117 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 						const parsed = parseInt(value, 10);
 						if (!isNaN(parsed) && parsed >= 8 && parsed <= 24) {
 							this.plugin.settings.sequenceFontSize = parsed;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		containerEl.createEl("h2", { text: "Alignment (MAFFT)" });
+
+		new Setting(containerEl)
+			.setName("MAFFT binary path")
+			.setDesc("Path to the MAFFT executable. Default uses PATH lookup.")
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.mafftPath)
+					.setPlaceholder("mafft")
+					.onChange(async (value) => {
+						this.plugin.settings.mafftPath = value || "mafft";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Alignment output directory")
+			.setDesc("Vault directory for saving alignment result files")
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.alignmentOutputDir)
+					.setPlaceholder("Plasmid design/alignments")
+					.onChange(async (value) => {
+						this.plugin.settings.alignmentOutputDir = value || "Plasmid design/alignments";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		containerEl.createEl("h3", { text: "Conservation Symbols" });
+		containerEl.createEl("p", {
+			text: "Characters displayed in the conservation row between aligned sequences. Each field accepts a single character.",
+			cls: "setting-item-description",
+		});
+
+		const symbols = this.plugin.settings.conservationSymbols;
+
+		new Setting(containerEl)
+			.setName("Identity")
+			.setDesc("Both residues are identical (default: |)")
+			.addText((text) =>
+				text
+					.setValue(symbols.identity)
+					.setPlaceholder("|")
+					.onChange(async (value) => {
+						if (value.length === 1) {
+							this.plugin.settings.conservationSymbols.identity = value;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Similar")
+			.setDesc("Strong similarity, BLOSUM62 groups (default: :)")
+			.addText((text) =>
+				text
+					.setValue(symbols.similar)
+					.setPlaceholder(":")
+					.onChange(async (value) => {
+						if (value.length === 1) {
+							this.plugin.settings.conservationSymbols.similar = value;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Weak")
+			.setDesc("Weak similarity (default: .)")
+			.addText((text) =>
+				text
+					.setValue(symbols.weak)
+					.setPlaceholder(".")
+					.onChange(async (value) => {
+						if (value.length === 1) {
+							this.plugin.settings.conservationSymbols.weak = value;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Mismatch")
+			.setDesc("Both residues present but different (default: X)")
+			.addText((text) =>
+				text
+					.setValue(symbols.mismatch)
+					.setPlaceholder("X")
+					.onChange(async (value) => {
+						if (value.length === 1) {
+							this.plugin.settings.conservationSymbols.mismatch = value;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Gap")
+			.setDesc("At least one sequence has a gap (default: -)")
+			.addText((text) =>
+				text
+					.setValue(symbols.gap)
+					.setPlaceholder("-")
+					.onChange(async (value) => {
+						if (value.length === 1) {
+							this.plugin.settings.conservationSymbols.gap = value;
 							await this.plugin.saveSettings();
 						}
 					})

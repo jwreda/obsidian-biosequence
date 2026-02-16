@@ -1,6 +1,14 @@
 /** The three supported biological sequence types */
 export type SequenceType = "aa" | "dna" | "rna";
 
+/** A named segment/feature within a sequence */
+export interface Segment {
+	name: string;
+	start: number;  // 0-indexed inclusive
+	end: number;    // 0-indexed exclusive
+	color: string;
+}
+
 /** A parsed and validated sequence */
 export interface ParsedSequence {
 	raw: string;
@@ -9,6 +17,7 @@ export interface ParsedSequence {
 	header: string | null;
 	isValid: boolean;
 	invalidPositions: number[];
+	segments: Segment[];
 }
 
 /** Color scheme identifier strings for amino acids */
@@ -38,6 +47,31 @@ export interface ColorScheme {
 	description: string;
 }
 
+/** A legend entry for categorical color schemes */
+export interface LegendGroup {
+	label: string;
+	residues: string[];
+	color: string;
+	textColor: string;
+}
+
+/** Legend metadata for a color scheme */
+export interface ColorSchemeMetadata {
+	legendType: "categorical" | "spectrum";
+	groups?: LegendGroup[];
+	spectrumLabel?: { low: string; high: string };
+	spectrumColors?: { low: string; high: string };
+}
+
+/** Conservation display symbols (user-configurable) */
+export interface ConservationSymbols {
+	identity: string;
+	similar: string;
+	weak: string;
+	mismatch: string;
+	gap: string;
+}
+
 /** Plugin settings persisted to data.json */
 export interface BiosequenceSettings {
 	defaultAAScheme: AAColorSchemeId;
@@ -48,6 +82,9 @@ export interface BiosequenceSettings {
 	sequenceFontSize: number;
 	summaryExpanded: boolean;
 	assumeDisulfideBonds: boolean;
+	mafftPath: string;
+	alignmentOutputDir: string;
+	conservationSymbols: ConservationSymbols;
 }
 
 /** Amino acid composition result */
@@ -87,6 +124,19 @@ export interface NucleotideProperties {
 	gcCount: number;
 }
 
+/** Parsed FASTA entry */
+export interface FastaEntry {
+	header: string;
+	sequence: string;
+}
+
+/** Result from MAFFT alignment */
+export interface AlignmentResult {
+	sequences: FastaEntry[];
+	type: SequenceType;
+	conservation: string;
+}
+
 /** Default settings */
 export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	defaultAAScheme: "rasmol",
@@ -97,4 +147,13 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	sequenceFontSize: 14,
 	summaryExpanded: true,
 	assumeDisulfideBonds: false,
+	mafftPath: "mafft",
+	alignmentOutputDir: "Plasmid design/alignments",
+	conservationSymbols: {
+		identity: "|",
+		similar: ":",
+		weak: ".",
+		mismatch: "X",
+		gap: "-",
+	},
 };

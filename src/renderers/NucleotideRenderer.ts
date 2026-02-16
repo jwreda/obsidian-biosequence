@@ -4,6 +4,7 @@ import {
 	NucleotideColorSchemeId,
 	NucleotideProperties,
 	ParsedSequence,
+	Segment,
 	SequenceType,
 } from "../types";
 import { autoContrast } from "../colorSchemes/aminoAcid";
@@ -12,6 +13,19 @@ import {
 	getNucleotideSchemeList,
 } from "../colorSchemes/index";
 import { calculateNucleotideProperties } from "../calculations/nucleotideProps";
+import { NUCLEOTIDE_LEGEND_DATA } from "../colorSchemes/legendData";
+import {
+	parseInlineAnnotations,
+	parseRangeAnnotations,
+	hasInlineAnnotations,
+	colorizeSegments,
+} from "../parsing/segmentParser";
+import { attachSelectionHandlers } from "./selectionHandler";
+import { renderSegmentTrack } from "./segmentTrack";
+import {
+	createReflowObserver,
+	computeInitialResiduesPerLine,
+} from "./reflowManager";
 
 const VALID_DNA = new Set("ATGC".split(""));
 const VALID_RNA = new Set("AUGC".split(""));
@@ -28,11 +42,57 @@ function parseNucleotideSequence(
 		header = firstLine.substring(1).trim();
 	}
 
-	const seqLines = lines.filter((l) => !l.startsWith(">"));
+	// Filter out FASTA headers
+	const nonHeaderLines = lines.filter((l) => !l.startsWith(">"));
+
+	// Check for --- delimiter (Approach B: range annotations)
+	const delimiterIdx = nonHeaderLines.indexOf("---");
+	let seqLines: string[];
+	let annotationLines: string[] = [];
+	let segments: Segment[] = [];
+
+	if (delimiterIdx >= 0) {
+		seqLines = nonHeaderLines.slice(0, delimiterIdx);
+		annotationLines = nonHeaderLines.slice(delimiterIdx + 1);
+	} else {
+		seqLines = nonHeaderLines;
+	}
+
+	const validSet = type === "dna" ? VALID_DNA : VALID_RNA;
+
+	// Check for inline annotations (Approach A)
+	if (hasInlineAnnotations(seqLines)) {
+		const result = parseInlineAnnotations(seqLines);
+		const cleaned = result.cleanedText.toUpperCase();
+
+		const invalidPositions: number[] = [];
+		const chars: string[] = [];
+		for (let i = 0; i < cleaned.length; i++) {
+			const ch = cleaned.charAt(i);
+			chars.push(ch);
+			if (!validSet.has(ch)) {
+				invalidPositions.push(i);
+			}
+		}
+
+		const sequence = chars.join("");
+		segments = colorizeSegments(result.segments);
+
+		return {
+			raw: source,
+			sequence,
+			type,
+			header,
+			isValid: invalidPositions.length === 0 && sequence.length > 0,
+			invalidPositions,
+			segments,
+		};
+	}
+
+	// Standard parsing (no inline annotations)
 	const raw = seqLines.join("");
 	const cleaned = raw.replace(/[\s\d\-*]/g, "").toUpperCase();
 
-	const validSet = type === "dna" ? VALID_DNA : VALID_RNA;
 	const invalidPositions: number[] = [];
 	const chars: string[] = [];
 
@@ -46,6 +106,12 @@ function parseNucleotideSequence(
 
 	const sequence = chars.join("");
 
+	// Parse range annotations if present (Approach B)
+	if (annotationLines.length > 0) {
+		const rawSegments = parseRangeAnnotations(annotationLines);
+		segments = colorizeSegments(rawSegments);
+	}
+
 	return {
 		raw: source,
 		sequence,
@@ -53,6 +119,7 @@ function parseNucleotideSequence(
 		header,
 		isValid: invalidPositions.length === 0 && sequence.length > 0,
 		invalidPositions,
+		segments,
 	};
 }
 
@@ -60,7 +127,7 @@ function renderToolbar(
 	container: HTMLElement,
 	type: SequenceType,
 	currentSchemeId: NucleotideColorSchemeId,
-	sequenceLength: number,
+	sequence: string,
 	onSchemeChange: (id: NucleotideColorSchemeId) => void
 ): void {
 	const toolbar = container.createDiv({ cls: "biosequence-toolbar" });
@@ -90,8 +157,59 @@ function renderToolbar(
 
 	toolbar.createSpan({
 		cls: "biosequence-length",
-		text: `(${sequenceLength} nt)`,
+		text: `(${sequence.length} nt)`,
 	});
+
+	// Copy button
+	const copyBtn = toolbar.createEl("button", {
+		cls: "biosequence-copy-btn",
+		text: "Copy",
+	});
+
+	copyBtn.addEventListener("click", async () => {
+		try {
+			await navigator.clipboard.writeText(sequence);
+			const originalText = copyBtn.textContent;
+			copyBtn.textContent = "Copied!";
+			copyBtn.addClass("copied");
+			setTimeout(() => {
+				copyBtn.textContent = originalText;
+				copyBtn.removeClass("copied");
+			}, 1500);
+		} catch (err) {
+			console.error("Failed to copy sequence:", err);
+		}
+	});
+}
+
+function renderLegend(
+	container: HTMLElement,
+	schemeId: NucleotideColorSchemeId
+): void {
+	const metadata = NUCLEOTIDE_LEGEND_DATA[schemeId];
+	if (!metadata) return;
+
+	const details = container.createEl("details", {
+		cls: "biosequence-legend",
+	});
+	details.createEl("summary", { text: "Color Scheme Legend" });
+
+	const content = details.createDiv({ cls: "biosequence-legend-content" });
+
+	if (metadata.legendType === "categorical" && metadata.groups) {
+		const grid = content.createDiv({ cls: "biosequence-legend-grid" });
+		for (const group of metadata.groups) {
+			const entry = grid.createDiv({ cls: "biosequence-legend-entry" });
+			const swatch = entry.createDiv({ cls: "biosequence-legend-swatch" });
+			swatch.style.backgroundColor = group.color;
+			swatch.style.color = group.textColor;
+			swatch.textContent = group.residues.join("");
+			entry.createSpan({
+				cls: "biosequence-legend-label",
+				text: group.label,
+			});
+		}
+	}
 }
 
 function renderColoredSequence(
@@ -99,17 +217,18 @@ function renderColoredSequence(
 	sequence: string,
 	scheme: ColorScheme,
 	settings: BiosequenceSettings,
-	invalidPositions: number[]
-): void {
+	invalidPositions: number[],
+	residuesPerLine: number
+): HTMLElement {
 	const invalidSet = new Set(invalidPositions);
 	const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
 	seqDiv.style.fontSize = `${settings.sequenceFontSize}px`;
 
-	const lineCount = Math.ceil(sequence.length / settings.residuesPerLine);
+	const lineCount = Math.ceil(sequence.length / residuesPerLine);
 
 	for (let lineIdx = 0; lineIdx < lineCount; lineIdx++) {
-		const start = lineIdx * settings.residuesPerLine;
-		const end = Math.min(start + settings.residuesPerLine, sequence.length);
+		const start = lineIdx * residuesPerLine;
+		const end = Math.min(start + residuesPerLine, sequence.length);
 		const lineDiv = seqDiv.createDiv({ cls: "biosequence-line" });
 
 		if (settings.showPositionNumbers) {
@@ -134,6 +253,7 @@ function renderColoredSequence(
 				text: ch,
 				title: `${ch} (pos ${i + 1})`,
 			});
+			span.dataset.pos = String(i);
 			span.style.backgroundColor = bgColor;
 			span.style.color = textColor;
 
@@ -142,6 +262,8 @@ function renderColoredSequence(
 			}
 		}
 	}
+
+	return seqDiv;
 }
 
 function countBases(sequence: string): Record<string, number> {
@@ -238,8 +360,15 @@ export function renderNucleotideBlock(
 	const defaultScheme =
 		type === "dna" ? settings.defaultDNAScheme : settings.defaultRNAScheme;
 	let currentSchemeId = defaultScheme;
+	let selectionCleanup: (() => void) | null = null;
 
-	function render(): void {
+	function render(residuesPerLine: number): void {
+		// Clean up previous handlers
+		if (selectionCleanup) {
+			selectionCleanup();
+			selectionCleanup = null;
+		}
+
 		container.empty();
 		const scheme = getNucleotideScheme(currentSchemeId);
 
@@ -254,24 +383,65 @@ export function renderNucleotideBlock(
 			container,
 			type,
 			currentSchemeId,
-			parsed.sequence.length,
+			parsed.sequence,
 			(newId) => {
 				currentSchemeId = newId;
-				render();
+				render(residuesPerLine);
 			}
 		);
 
-		renderColoredSequence(
+		renderLegend(container, currentSchemeId);
+
+		const seqDiv = renderColoredSequence(
 			container,
 			parsed.sequence,
 			scheme,
 			settings,
-			parsed.invalidPositions
+			parsed.invalidPositions,
+			residuesPerLine
 		);
+
+		// Attach selection handlers
+		const selection = attachSelectionHandlers(
+			seqDiv,
+			container,
+			parsed.sequence
+		);
+		selectionCleanup = selection.cleanup;
+
+		// Render segment track
+		if (parsed.segments.length > 0) {
+			renderSegmentTrack(
+				container,
+				seqDiv,
+				parsed.segments,
+				parsed.sequence.length,
+				settings.showPositionNumbers
+			);
+		}
 
 		const props = calculateNucleotideProperties(parsed.sequence, type);
 		renderNucleotideSummaryPanel(container, props, type, parsed.sequence);
 	}
 
-	render();
+	// Compute initial residues per line from container width
+	const initialResiduesPerLine = computeInitialResiduesPerLine(
+		container,
+		settings.showPositionNumbers,
+		settings.sequenceFontSize,
+		settings.residuesPerLine
+	);
+
+	render(initialResiduesPerLine);
+
+	// Attach reflow observer
+	createReflowObserver(
+		container,
+		settings.showPositionNumbers,
+		settings.sequenceFontSize,
+		settings.residuesPerLine,
+		(newResiduesPerLine) => {
+			render(newResiduesPerLine);
+		}
+	);
 }
