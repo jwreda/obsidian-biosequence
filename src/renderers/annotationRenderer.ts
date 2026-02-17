@@ -83,38 +83,46 @@ export function renderLineRibbons(
 	// Assign to non-overlapping lanes (greedy interval scheduling)
 	const lanes = assignLanes(overlapping);
 
-	const residueWidth = fontSize * 1.2 + 1; // matches CSS: width 1.2em + 0.5px margin each side
-	const GUTTER_WIDTH_EM = 5;
-	const GUTTER_FONT_SCALE = 0.8; // matches CSS .biosequence-gutter font-size: 0.8em
-	const GUTTER_PADDING_PX = 10;
-	const gutterWidth = gutterActive ? (GUTTER_WIDTH_EM * GUTTER_FONT_SCALE * fontSize + GUTTER_PADDING_PX) : 0;
+	// Build a map of data-pos -> residue element for DOM-measured positioning
+	const residueEls = lineDiv.querySelectorAll<HTMLElement>(".biosequence-residue[data-pos]");
+	const posMap = new Map<number, HTMLElement>();
+	for (const el of Array.from(residueEls)) {
+		const pos = parseInt(el.dataset["pos"] ?? "-1", 10);
+		if (pos >= 0) posMap.set(pos, el);
+	}
+
+	// Reference origin: lineWrapper left edge (ribbon rows share this origin)
+	const wrapperRect = lineWrapper.getBoundingClientRect();
 
 	for (const lane of lanes) {
 		const ribbonRow = document.createElement("div");
 		ribbonRow.className = "biosequence-ribbon-row";
-		if (gutterActive) {
-			ribbonRow.style.paddingLeft = `${gutterWidth}px`;
-		}
 
 		for (const seg of lane) {
 			// Clamp to line bounds
 			const clampedStart = Math.max(seg.start, lineStart);
 			const clampedEnd = Math.min(seg.end, lineEnd);
 
-			const offsetChars = clampedStart - lineStart;
-			const widthChars = clampedEnd - clampedStart;
+			// Look up actual DOM elements for start and end residues
+			const startEl = posMap.get(clampedStart);
+			const endEl = posMap.get(clampedEnd - 1); // end is exclusive
+			if (!startEl || !endEl) continue;
+
+			const startRect = startEl.getBoundingClientRect();
+			const endRect = endEl.getBoundingClientRect();
 
 			const ribbon = document.createElement("div");
 			ribbon.className = "biosequence-ribbon";
 			if (seg.source === "library") {
 				ribbon.classList.add("biosequence-ribbon-library");
 			}
-			ribbon.style.marginLeft = `${offsetChars * residueWidth}px`;
-			ribbon.style.width = `${widthChars * residueWidth}px`;
+			ribbon.style.left = `${startRect.left - wrapperRect.left}px`;
+			ribbon.style.width = `${endRect.right - startRect.left}px`;
 			ribbon.style.backgroundColor = seg.color;
 			ribbon.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.source === "library" ? " [library]" : ""}`;
 
 			// Label if wide enough (>6 characters)
+			const widthChars = clampedEnd - clampedStart;
 			if (widthChars > 6) {
 				const label = document.createElement("span");
 				label.className = "biosequence-ribbon-label";
@@ -157,20 +165,10 @@ export function renderBadgeBar(
 ): void {
 	if (segments.length === 0) return;
 
-	// Deduplicate by name
-	const seen = new Set<string>();
-	const unique: AnnotatedSegment[] = [];
-	for (const seg of segments) {
-		if (!seen.has(seg.name)) {
-			seen.add(seg.name);
-			unique.push(seg);
-		}
-	}
-
 	const badgeBar = document.createElement("div");
 	badgeBar.className = "biosequence-badge-bar";
 
-	for (const seg of unique) {
+	for (const seg of segments) {
 		const badge = document.createElement("span");
 		badge.className = "biosequence-badge";
 		badge.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.source === "library" ? " [library]" : ""}`;
@@ -217,21 +215,11 @@ export function renderAnnotationLegend(
 ): void {
 	if (segments.length === 0) return;
 
-	// Deduplicate by name, preserve order
-	const seen = new Set<string>();
-	const unique: AnnotatedSegment[] = [];
-	for (const seg of segments) {
-		if (!seen.has(seg.name)) {
-			seen.add(seg.name);
-			unique.push(seg);
-		}
-	}
-
 	const details = container.createEl("details", { cls: "biosequence-annotation-legend" });
-	details.createEl("summary", { text: `Annotations (${unique.length})` });
+	details.createEl("summary", { text: `Annotations (${segments.length})` });
 
 	const content = details.createDiv({ cls: "biosequence-annotation-legend-content" });
-	for (const seg of unique) {
+	for (const seg of segments) {
 		const item = content.createDiv({ cls: "biosequence-annotation-legend-item" });
 		const swatch = item.createSpan({ cls: "biosequence-annotation-swatch" });
 		swatch.style.backgroundColor = seg.color;

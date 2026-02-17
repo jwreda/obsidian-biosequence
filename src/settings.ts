@@ -4,9 +4,89 @@ import { AAColorSchemeId, NucleotideColorSchemeId, AnnotationDisplayMode, Featur
 import { getAASchemeList, getNucleotideSchemeList } from "./colorSchemes/index";
 import { FeatureEditorModal } from "./features/FeatureEditorModal";
 import { FeatureImportModal } from "./features/FeatureImportModal";
+import { SEGMENT_PALETTE } from "./parsing/segmentParser";
+
+function normalizeHexColor(raw: string): string | null {
+	const hex = raw.replace(/^#/, "");
+	if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+		return "#" + hex.toLowerCase();
+	}
+	return null;
+}
+
+function serializeFeaturesToTsv(features: FeatureEntry[]): string {
+	const header = "Name\tSequence\tType\tColor\tEnabled";
+	const rows = features.map(f =>
+		`${f.name}\t${f.sequence}\t${f.type}\t${f.color}\t${f.enabled}`
+	);
+	return [header, ...rows].join("\n");
+}
+
+function parseTsvEditorContent(text: string): { features: FeatureEntry[]; errors: string[] } {
+	const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+	const features: FeatureEntry[] = [];
+	const errors: string[] = [];
+
+	let startIdx = 0;
+	const firstLine = lines[0];
+	if (firstLine !== undefined && /^name\t/i.test(firstLine)) {
+		startIdx = 1;
+	}
+
+	for (let i = startIdx; i < lines.length; i++) {
+		const line = lines[i];
+		if (line === undefined) continue;
+
+		const parts = line.split("\t");
+		if (parts.length < 2) {
+			errors.push(`Line ${i + 1}: too few columns`);
+			continue;
+		}
+
+		const name = (parts[0] ?? "").trim();
+		const sequence = (parts[1] ?? "").replace(/\s/g, "").toUpperCase();
+		const typeStr = (parts[2] ?? "aa").trim().toLowerCase();
+		const type: "aa" | "dna" | "rna" = (typeStr === "dna" || typeStr === "rna") ? typeStr : "aa";
+
+		// Parse color
+		let color: string;
+		const rawColor = (parts[3] ?? "").trim();
+		if (rawColor.length > 0) {
+			const normalized = normalizeHexColor(rawColor);
+			if (normalized) {
+				color = normalized;
+			} else {
+				errors.push(`Line ${i + 1}: invalid color "${rawColor}"`);
+				color = SEGMENT_PALETTE[features.length % SEGMENT_PALETTE.length] ?? "#7eb8da";
+			}
+		} else {
+			color = SEGMENT_PALETTE[features.length % SEGMENT_PALETTE.length] ?? "#7eb8da";
+		}
+
+		// Parse enabled
+		const enabledStr = (parts[4] ?? "true").trim().toLowerCase();
+		const enabled = enabledStr !== "false" && enabledStr !== "0";
+
+		if (name.length > 0 && sequence.length > 0) {
+			features.push({
+				id: crypto.randomUUID(),
+				name,
+				sequence,
+				type,
+				color,
+				enabled,
+			});
+		} else {
+			errors.push(`Line ${i + 1}: missing name or sequence`);
+		}
+	}
+
+	return { features, errors };
+}
 
 export class BiosequenceSettingTab extends PluginSettingTab {
 	plugin: BiosequencePlugin;
+	private tsvEditorActive: boolean = false;
 
 	constructor(app: App, plugin: BiosequencePlugin) {
 		super(app, plugin);
@@ -33,18 +113,6 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
-
-		new Setting(containerEl)
-			.setName("Assume disulfide bonds")
-			.setDesc("For extinction coefficient: assume all Cys pairs form disulfide bonds")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.assumeDisulfideBonds)
-					.onChange(async (value) => {
-						this.plugin.settings.assumeDisulfideBonds = value;
-						await this.plugin.saveSettings();
-					})
-			);
 
 		containerEl.createEl("h2", { text: "Nucleotide Sequences" });
 
@@ -138,6 +206,18 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+
+		new Setting(containerEl)
+			.setName("Expand properties by default")
+			.setDesc("Whether the sequence properties panel starts expanded or collapsed")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.summaryExpanded)
+					.onChange(async (value) => {
+						this.plugin.settings.summaryExpanded = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		containerEl.createEl("h2", { text: "Alignment (MAFFT)" });
 
@@ -264,37 +344,50 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		// Toolbar
 		const toolbar = containerEl.createDiv({ cls: "biosequence-feature-toolbar" });
 
-		const selectAllBtn = toolbar.createEl("button", { text: "Select All" });
-		selectAllBtn.addEventListener("click", async () => {
-			for (const f of this.plugin.settings.featureLibrary) f.enabled = true;
-			await this.plugin.saveSettings();
+		if (!this.tsvEditorActive) {
+			const selectAllBtn = toolbar.createEl("button", { text: "Select All" });
+			selectAllBtn.addEventListener("click", async () => {
+				for (const f of this.plugin.settings.featureLibrary) f.enabled = true;
+				await this.plugin.saveSettings();
+				this.display();
+			});
+
+			const deselectAllBtn = toolbar.createEl("button", { text: "Deselect All" });
+			deselectAllBtn.addEventListener("click", async () => {
+				for (const f of this.plugin.settings.featureLibrary) f.enabled = false;
+				await this.plugin.saveSettings();
+				this.display();
+			});
+
+			const addBtn = toolbar.createEl("button", { text: "Add Feature", cls: "mod-cta" });
+			addBtn.addEventListener("click", () => {
+				new FeatureEditorModal(this.app, null, async (feature) => {
+					this.plugin.settings.featureLibrary.push(feature);
+					await this.plugin.saveSettings();
+					this.display();
+				}).open();
+			});
+
+			const importBtn = toolbar.createEl("button", { text: "Import" });
+			importBtn.addEventListener("click", () => {
+				new FeatureImportModal(this.app, async (features) => {
+					this.plugin.settings.featureLibrary.push(...features);
+					await this.plugin.saveSettings();
+					this.display();
+				}).open();
+			});
+		}
+
+		const tsvBtn = toolbar.createEl("button", { text: this.tsvEditorActive ? "Row Editor" : "TSV Editor" });
+		tsvBtn.addEventListener("click", () => {
+			this.tsvEditorActive = !this.tsvEditorActive;
 			this.display();
 		});
 
-		const deselectAllBtn = toolbar.createEl("button", { text: "Deselect All" });
-		deselectAllBtn.addEventListener("click", async () => {
-			for (const f of this.plugin.settings.featureLibrary) f.enabled = false;
-			await this.plugin.saveSettings();
-			this.display();
-		});
-
-		const addBtn = toolbar.createEl("button", { text: "Add Feature", cls: "mod-cta" });
-		addBtn.addEventListener("click", () => {
-			new FeatureEditorModal(this.app, null, async (feature) => {
-				this.plugin.settings.featureLibrary.push(feature);
-				await this.plugin.saveSettings();
-				this.display();
-			}).open();
-		});
-
-		const importBtn = toolbar.createEl("button", { text: "Import" });
-		importBtn.addEventListener("click", () => {
-			new FeatureImportModal(this.app, async (features) => {
-				this.plugin.settings.featureLibrary.push(...features);
-				await this.plugin.saveSettings();
-				this.display();
-			}).open();
-		});
+		if (this.tsvEditorActive) {
+			this.renderTsvEditor(containerEl);
+			return;
+		}
 
 		// Feature list
 		const listContainer = containerEl.createDiv({ cls: "biosequence-feature-list" });
@@ -310,6 +403,76 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		for (const feature of this.plugin.settings.featureLibrary) {
 			this.renderFeatureRow(listContainer, feature);
 		}
+	}
+
+	private renderTsvEditor(containerEl: HTMLElement): void {
+		const editorContainer = containerEl.createDiv({ cls: "biosequence-feature-list" });
+
+		// Textarea pre-filled with serialized features
+		const textarea = editorContainer.createEl("textarea", {
+			cls: "biosequence-tsv-editor-textarea",
+			placeholder: "Name\tSequence\tType\tColor\tEnabled\nIgk Leader\tMETDTLLLWVLLLWVPGSTGD\taa\t#7eb8da\ttrue",
+		});
+		textarea.value = serializeFeaturesToTsv(this.plugin.settings.featureLibrary);
+
+		// Intercept Tab key to insert tab character
+		textarea.addEventListener("keydown", (e) => {
+			if (e.key === "Tab") {
+				e.preventDefault();
+				const start = textarea.selectionStart;
+				const end = textarea.selectionEnd;
+				textarea.value = textarea.value.substring(0, start) + "\t" + textarea.value.substring(end);
+				textarea.selectionStart = textarea.selectionEnd = start + 1;
+				// Trigger input event for live preview
+				textarea.dispatchEvent(new Event("input"));
+			}
+		});
+
+		// Live preview
+		const preview = editorContainer.createDiv({ cls: "biosequence-tsv-editor-preview" });
+
+		const updatePreview = (): void => {
+			const text = textarea.value.trim();
+			if (text.length === 0) {
+				preview.textContent = "Empty — all features will be removed on save";
+				preview.className = "biosequence-tsv-editor-preview";
+				return;
+			}
+			const result = parseTsvEditorContent(text);
+			if (result.errors.length === 0) {
+				preview.textContent = `${result.features.length} feature${result.features.length !== 1 ? "s" : ""} parsed (no errors)`;
+				preview.className = "biosequence-tsv-editor-preview";
+			} else {
+				preview.textContent = `${result.features.length} feature${result.features.length !== 1 ? "s" : ""} parsed (${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}): ${result.errors[0]}${result.errors.length > 1 ? ` (+${result.errors.length - 1} more)` : ""}`;
+				preview.className = "biosequence-tsv-editor-preview biosequence-tsv-editor-error";
+			}
+		};
+
+		textarea.addEventListener("input", updatePreview);
+		updatePreview(); // Initial preview
+
+		// Action buttons
+		const actions = editorContainer.createDiv({ cls: "biosequence-tsv-editor-actions" });
+
+		const cancelBtn = actions.createEl("button", { text: "Cancel" });
+		cancelBtn.addEventListener("click", () => {
+			this.tsvEditorActive = false;
+			this.display();
+		});
+
+		const saveBtn = actions.createEl("button", { text: "Save", cls: "mod-cta" });
+		saveBtn.addEventListener("click", async () => {
+			const text = textarea.value.trim();
+			if (text.length === 0) {
+				this.plugin.settings.featureLibrary = [];
+			} else {
+				const result = parseTsvEditorContent(text);
+				this.plugin.settings.featureLibrary = result.features;
+			}
+			await this.plugin.saveSettings();
+			this.tsvEditorActive = false;
+			this.display();
+		});
 	}
 
 	private renderFeatureRow(container: HTMLElement, feature: FeatureEntry): void {

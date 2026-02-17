@@ -140,13 +140,15 @@ export function parseRangeAnnotations(
 	return segments;
 }
 
-/** Assign colors from palette to segments */
-export function colorizeSegments(segments: RawSegmentAnnotation[]): Segment[] {
+/** Assign colors from palette to segments.
+ *  @param offset - palette index offset so separately-parsed groups get distinct colors
+ */
+export function colorizeSegments(segments: RawSegmentAnnotation[], offset = 0): Segment[] {
 	return segments.map((seg, i) => ({
 		name: seg.name,
 		start: seg.start,
 		end: seg.end,
-		color: SEGMENT_PALETTE[i % SEGMENT_PALETTE.length] ?? "#7eb8da",
+		color: SEGMENT_PALETTE[(i + offset) % SEGMENT_PALETTE.length] ?? "#7eb8da",
 	}));
 }
 

@@ -182,6 +182,14 @@
 	color: var(--text-normal);
 }
 
+/* EC = 0 explanatory note */
+.biosequence-prop-note {
+	grid-column: 1 / -1;
+	font-style: italic;
+	opacity: 0.7;
+	font-size: 0.85em;
+}
+
 /* Stability indicators */
 .biosequence-prop-value .stable {
 	color: #43a047;
@@ -513,14 +521,15 @@
 
 /* Ribbon row below a sequence line */
 .biosequence-ribbon-row {
-	display: flex;
-	align-items: center;
+	position: relative;
 	min-height: 16px;
 	margin-bottom: 1px;
 }
 
 /* Individual ribbon bar */
 .biosequence-ribbon {
+	position: absolute;
+	top: 1px;
 	height: 14px;
 	border-radius: 3px;
 	display: inline-flex;
@@ -530,7 +539,6 @@
 	transition: filter 0.15s ease;
 	box-sizing: border-box;
 	border: 1px solid rgba(0, 0, 0, 0.1);
-	flex-shrink: 0;
 }
 
 .biosequence-ribbon:hover,
@@ -873,4 +881,47 @@
 .biosequence-import-actions {
 	text-align: right;
 	margin-top: 12px;
+}
+
+/* ===== TSV Bulk Editor ===== */
+
+.biosequence-tsv-editor-textarea {
+	width: 100%;
+	min-height: 200px;
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	resize: vertical;
+	margin-bottom: 8px;
+	tab-size: 16;
+	-moz-tab-size: 16;
+	white-space: pre;
+	overflow-x: auto;
+}
+
+.biosequence-tsv-editor-textarea:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+.biosequence-tsv-editor-preview {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	padding: 4px 0;
+	min-height: 1.5em;
+}
+
+.biosequence-tsv-editor-error {
+	color: #e53935;
+}
+
+.biosequence-tsv-editor-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 8px;
 }

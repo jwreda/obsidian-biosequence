@@ -69,7 +69,16 @@ function parseAASequence(source: string): ParsedSequence {
 		}
 
 		const sequence = chars.join("");
-		segments = colorizeSegments(result.segments);
+		const inlineColored = colorizeSegments(result.segments);
+
+		// Also parse range annotations if present (merge both approaches)
+		if (annotationLines.length > 0) {
+			const rangeRaw = parseRangeAnnotations(annotationLines);
+			const rangeColored = colorizeSegments(rangeRaw, result.segments.length);
+			segments = [...inlineColored, ...rangeColored];
+		} else {
+			segments = inlineColored;
+		}
 
 		return {
 			raw: source,
@@ -119,7 +128,10 @@ function renderToolbar(
 	container: HTMLElement,
 	currentSchemeId: AAColorSchemeId,
 	sequence: string,
-	onSchemeChange: (id: AAColorSchemeId) => void
+	onSchemeChange: (id: AAColorSchemeId) => void,
+	currentDisplayMode: AnnotationDisplayMode,
+	onDisplayModeToggle: () => void,
+	onRefresh: () => void
 ): void {
 	const toolbar = container.createDiv({ cls: "biosequence-toolbar" });
 	toolbar.createSpan({ cls: "biosequence-type-label", text: "AA" });
@@ -168,6 +180,22 @@ function renderToolbar(
 			console.error("Failed to copy sequence:", err);
 		}
 	});
+
+	// Display mode toggle
+	const modeBtn = toolbar.createEl("button", {
+		cls: "biosequence-copy-btn",
+		text: currentDisplayMode === "ribbons" ? "\u2630 Badges" : "\u2630 Ribbons",
+		title: `Switch to ${currentDisplayMode === "ribbons" ? "badge" : "ribbon"} annotations`,
+	});
+	modeBtn.addEventListener("click", onDisplayModeToggle);
+
+	// Refresh button
+	const refreshBtn = toolbar.createEl("button", {
+		cls: "biosequence-copy-btn",
+		text: "\u21BB",
+		title: "Refresh view and re-match features",
+	});
+	refreshBtn.addEventListener("click", onRefresh);
 }
 
 function renderLegend(
@@ -304,10 +332,12 @@ function renderColoredSequence(
 
 function renderSummaryPanel(
 	container: HTMLElement,
-	props: ProteinProperties
+	props: ProteinProperties,
+	expanded: boolean
 ): void {
-	const summary = container.createDiv({ cls: "biosequence-summary" });
-	summary.createDiv({
+	const summary = container.createEl("details", { cls: "biosequence-summary" });
+	summary.open = expanded;
+	summary.createEl("summary", {
 		cls: "biosequence-summary-header",
 		text: "Protein Properties",
 	});
@@ -330,13 +360,17 @@ function renderSummaryPanel(
 	);
 	addProp("Theoretical pI", props.theoreticalPI.toFixed(2));
 	addProp(
-		"Extinction Coefficient",
-		`${props.extinctionCoefficient.toLocaleString()} M\u207B\u00B9cm\u207B\u00B9 (reduced)`
+		"Ext. Coeff. (reduced)",
+		`${props.extinctionCoefficient.toLocaleString()} M\u207B\u00B9cm\u207B\u00B9`
 	);
 	addProp(
 		"Ext. Coeff. (SS bonds)",
 		`${props.extinctionCoefficientSS.toLocaleString()} M\u207B\u00B9cm\u207B\u00B9`
 	);
+	if (props.extinctionCoefficient === 0 && props.extinctionCoefficientSS === 0) {
+		const note = grid.createDiv({ cls: "biosequence-prop biosequence-prop-note" });
+		note.textContent = "No Trp (W) or Tyr (Y) \u2014 cannot be quantified by A\u2082\u2088\u2080";
+	}
 	addProp(
 		"Abs 0.1% (1 g/L)",
 		`${props.absorbance01.toFixed(3)} (reduced) / ${props.absorbance01SS.toFixed(3)} (SS bonds)`
@@ -396,14 +430,15 @@ export function renderAminoAcidBlock(
 		return;
 	}
 
-	// Match library features and merge with inline/range segments
-	const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, "aa");
-	const allSegments = mergeSegments(parsed.segments, featureMatches);
-
 	let currentSchemeId = settings.defaultAAScheme;
+	let currentDisplayMode: AnnotationDisplayMode = settings.annotationDisplayMode;
 	let selectionCleanup: (() => void) | null = null;
 
 	function render(residuesPerLine: number): void {
+		// Match library features and merge with inline/range segments
+		const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, "aa");
+		const allSegments = mergeSegments(parsed.segments, featureMatches);
+
 		// Clean up previous handlers
 		if (selectionCleanup) {
 			selectionCleanup();
@@ -427,7 +462,13 @@ export function renderAminoAcidBlock(
 			(newId) => {
 				currentSchemeId = newId;
 				render(residuesPerLine);
-			}
+			},
+			currentDisplayMode,
+			() => {
+				currentDisplayMode = currentDisplayMode === "ribbons" ? "badges" : "ribbons";
+				render(residuesPerLine);
+			},
+			() => render(residuesPerLine)
 		);
 
 		renderLegend(container, currentSchemeId);
@@ -452,7 +493,7 @@ export function renderAminoAcidBlock(
 			parsed.invalidPositions,
 			residuesPerLine,
 			allSegments,
-			settings.annotationDisplayMode,
+			currentDisplayMode,
 			selection.selectRange
 		);
 
@@ -465,7 +506,7 @@ export function renderAminoAcidBlock(
 			parsed.sequence,
 			settings.assumeDisulfideBonds
 		);
-		renderSummaryPanel(container, props);
+		renderSummaryPanel(container, props, settings.summaryExpanded);
 	}
 
 	// Compute initial residues per line from container width

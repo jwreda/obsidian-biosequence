@@ -264,9 +264,7 @@ export function calculateProteinProperties(
 	return {
 		molecularWeight,
 		theoreticalPI,
-		extinctionCoefficient: assumeDisulfideBonds
-			? extinction.oxidized
-			: extinction.reduced,
+		extinctionCoefficient: extinction.reduced,
 		extinctionCoefficientSS: extinction.oxidized,
 		absorbance01,
 		absorbance01SS,

@@ -79,7 +79,16 @@ function parseNucleotideSequence(
 		}
 
 		const sequence = chars.join("");
-		segments = colorizeSegments(result.segments);
+		const inlineColored = colorizeSegments(result.segments);
+
+		// Also parse range annotations if present (merge both approaches)
+		if (annotationLines.length > 0) {
+			const rangeRaw = parseRangeAnnotations(annotationLines);
+			const rangeColored = colorizeSegments(rangeRaw, result.segments.length);
+			segments = [...inlineColored, ...rangeColored];
+		} else {
+			segments = inlineColored;
+		}
 
 		return {
 			raw: source,
@@ -131,7 +140,10 @@ function renderToolbar(
 	type: SequenceType,
 	currentSchemeId: NucleotideColorSchemeId,
 	sequence: string,
-	onSchemeChange: (id: NucleotideColorSchemeId) => void
+	onSchemeChange: (id: NucleotideColorSchemeId) => void,
+	currentDisplayMode: AnnotationDisplayMode,
+	onDisplayModeToggle: () => void,
+	onRefresh: () => void
 ): void {
 	const toolbar = container.createDiv({ cls: "biosequence-toolbar" });
 	toolbar.createSpan({
@@ -183,6 +195,22 @@ function renderToolbar(
 			console.error("Failed to copy sequence:", err);
 		}
 	});
+
+	// Display mode toggle
+	const modeBtn = toolbar.createEl("button", {
+		cls: "biosequence-copy-btn",
+		text: currentDisplayMode === "ribbons" ? "\u2630 Badges" : "\u2630 Ribbons",
+		title: `Switch to ${currentDisplayMode === "ribbons" ? "badge" : "ribbon"} annotations`,
+	});
+	modeBtn.addEventListener("click", onDisplayModeToggle);
+
+	// Refresh button
+	const refreshBtn = toolbar.createEl("button", {
+		cls: "biosequence-copy-btn",
+		text: "\u21BB",
+		title: "Refresh view and re-match features",
+	});
+	refreshBtn.addEventListener("click", onRefresh);
 }
 
 function renderLegend(
@@ -311,11 +339,13 @@ function renderNucleotideSummaryPanel(
 	container: HTMLElement,
 	props: NucleotideProperties,
 	type: SequenceType,
-	sequence: string
+	sequence: string,
+	expanded: boolean
 ): void {
-	const summary = container.createDiv({ cls: "biosequence-summary" });
+	const summary = container.createEl("details", { cls: "biosequence-summary" });
+	summary.open = expanded;
 	const typeLabel = type === "dna" ? "DNA" : "RNA";
-	summary.createDiv({
+	summary.createEl("summary", {
 		cls: "biosequence-summary-header",
 		text: `${typeLabel} Properties`,
 	});
@@ -390,16 +420,17 @@ export function renderNucleotideBlock(
 		return;
 	}
 
-	// Match library features and merge with inline/range segments
-	const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, type);
-	const allSegments = mergeSegments(parsed.segments, featureMatches);
-
 	const defaultScheme =
 		type === "dna" ? settings.defaultDNAScheme : settings.defaultRNAScheme;
 	let currentSchemeId = defaultScheme;
+	let currentDisplayMode: AnnotationDisplayMode = settings.annotationDisplayMode;
 	let selectionCleanup: (() => void) | null = null;
 
 	function render(residuesPerLine: number): void {
+		// Match library features and merge with inline/range segments
+		const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, type);
+		const allSegments = mergeSegments(parsed.segments, featureMatches);
+
 		// Clean up previous handlers
 		if (selectionCleanup) {
 			selectionCleanup();
@@ -424,7 +455,13 @@ export function renderNucleotideBlock(
 			(newId) => {
 				currentSchemeId = newId;
 				render(residuesPerLine);
-			}
+			},
+			currentDisplayMode,
+			() => {
+				currentDisplayMode = currentDisplayMode === "ribbons" ? "badges" : "ribbons";
+				render(residuesPerLine);
+			},
+			() => render(residuesPerLine)
 		);
 
 		renderLegend(container, currentSchemeId);
@@ -449,7 +486,7 @@ export function renderNucleotideBlock(
 			parsed.invalidPositions,
 			residuesPerLine,
 			allSegments,
-			settings.annotationDisplayMode,
+			currentDisplayMode,
 			selection.selectRange
 		);
 
@@ -459,7 +496,7 @@ export function renderNucleotideBlock(
 		}
 
 		const props = calculateNucleotideProperties(parsed.sequence, type);
-		renderNucleotideSummaryPanel(container, props, type, parsed.sequence);
+		renderNucleotideSummaryPanel(container, props, type, parsed.sequence, settings.summaryExpanded);
 	}
 
 	// Compute initial residues per line from container width

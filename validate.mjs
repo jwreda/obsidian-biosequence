@@ -352,6 +352,38 @@ total++; if (testComp.complement === "TACG") { passes++; console.log("  ✓ Comp
 total++; if (testComp.reverseComplement === "GCAT") { passes++; console.log("  ✓ RevComp ATGC → GCAT"); } else console.log(`  ✗ RevComp ATGC → ${testComp.reverseComplement} (expected GCAT)`);
 console.log();
 
+// Test 6: Extinction coefficient edge cases
+console.log("───────────────────────────────────────────────────────────────");
+console.log("TEST 6: Extinction Coefficient Edge Cases\n");
+
+// SIINFEKL: no W, no Y, no C → EC_red = 0, EC_ox = 0
+const siinfekl = "SIINFEKL";
+const compSI = computeComposition(siinfekl);
+const extSI = computeExtCoeff(compSI);
+run("SIINFEKL EC reduced (no W/Y/C)", extSI.reduced, 0, 0.01);
+run("SIINFEKL EC oxidized (no W/Y/C)", extSI.oxidized, 0, 0.01);
+
+// AAYAACAA: 0 W, 1 Y, 1 C → EC_red = 1490, EC_ox = 1490 (floor(1/2)=0 SS)
+const aayaacaa = "AAYAACAA";
+const compAY = computeComposition(aayaacaa);
+const extAY = computeExtCoeff(compAY);
+run("AAYAACAA EC reduced (1Y, 1C)", extAY.reduced, 1490, 0.01);
+run("AAYAACAA EC oxidized (1Y, 1C, 0 SS)", extAY.oxidized, 1490, 0.01);
+
+// AAWAA: 1 W, 0 Y, 0 C → EC_red = 5500, EC_ox = 5500
+const aawaa = "AAWAA";
+const compAW = computeComposition(aawaa);
+const extAW = computeExtCoeff(compAW);
+run("AAWAA EC reduced (1W)", extAW.reduced, 5500, 0.01);
+run("AAWAA EC oxidized (1W, 0C)", extAW.oxidized, 5500, 0.01);
+
+// AAWCCYAA: 1 W, 1 Y, 2 C → EC_red = 6990, EC_ox = 6990 + 125 = 7115
+const aawccyaa = "AAWCCYAA";
+const compMix = computeComposition(aawccyaa);
+const extMix = computeExtCoeff(compMix);
+run("AAWCCYAA EC reduced (1W, 1Y)", extMix.reduced, 6990, 0.01);
+run("AAWCCYAA EC oxidized (1W, 1Y, 1SS)", extMix.oxidized, 7115, 0.01);
+
 // Summary
 console.log("═══════════════════════════════════════════════════════════════");
 console.log(`  RESULTS: ${passes}/${total} tests passed`);
