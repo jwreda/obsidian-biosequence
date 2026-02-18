@@ -110,6 +110,24 @@ export const AA_LEGEND_DATA: Record<AAColorSchemeId, ColorSchemeMetadata> = {
 			{ label: "Histidine", residues: ["H"], color: "#90CAF9", textColor: "#333" },
 		],
 	},
+
+	cysteine: {
+		legendType: "categorical",
+		groups: [
+			{ label: "Cysteine", residues: ["C"], color: "#E91E63", textColor: "#FFF" },
+			{ label: "Other", residues: ["A", "R", "N", "D", "Q", "E", "G", "H", "I", "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V"], color: "#BDBDBD", textColor: "#555" },
+		],
+	},
+
+	phosphorylation: {
+		legendType: "categorical",
+		groups: [
+			{ label: "Serine", residues: ["S"], color: "#2196F3", textColor: "#FFF" },
+			{ label: "Threonine", residues: ["T"], color: "#FF9800", textColor: "#FFF" },
+			{ label: "Tyrosine", residues: ["Y"], color: "#9C27B0", textColor: "#FFF" },
+			{ label: "Other", residues: ["A", "R", "N", "D", "C", "Q", "E", "G", "H", "I", "L", "K", "M", "F", "P", "W", "V"], color: "#BDBDBD", textColor: "#555" },
+		],
+	},
 };
 
 export const NUCLEOTIDE_LEGEND_DATA: Record<NucleotideColorSchemeId, ColorSchemeMetadata> = {

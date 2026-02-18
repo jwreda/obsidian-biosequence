@@ -239,4 +239,48 @@ export const AA_SCHEMES: Record<AAColorSchemeId, ColorScheme> = {
 			H: "#333",
 		},
 	},
+
+	cysteine: {
+		id: "cysteine",
+		name: "Cysteine",
+		type: "aa",
+		description: "Highlights cysteine residues only",
+		colors: {
+			A: "#BDBDBD", R: "#BDBDBD", N: "#BDBDBD", D: "#BDBDBD",
+			C: "#E91E63", Q: "#BDBDBD", E: "#BDBDBD", G: "#BDBDBD",
+			H: "#BDBDBD", I: "#BDBDBD", L: "#BDBDBD", K: "#BDBDBD",
+			M: "#BDBDBD", F: "#BDBDBD", P: "#BDBDBD", S: "#BDBDBD",
+			T: "#BDBDBD", W: "#BDBDBD", Y: "#BDBDBD", V: "#BDBDBD",
+		},
+		textColors: {
+			A: "#555", R: "#555", N: "#555", D: "#555",
+			C: "#FFF", Q: "#555", E: "#555", G: "#555",
+			H: "#555", I: "#555", L: "#555", K: "#555",
+			M: "#555", F: "#555", P: "#555", S: "#555",
+			T: "#555", W: "#555", Y: "#555", V: "#555",
+		},
+	},
+
+	phosphorylation: {
+		id: "phosphorylation",
+		name: "Phosphorylation",
+		type: "aa",
+		description: "Highlights phosphorylatable residues (S, T, Y)",
+		colors: {
+			A: "#BDBDBD", R: "#BDBDBD", N: "#BDBDBD", D: "#BDBDBD",
+			C: "#BDBDBD", Q: "#BDBDBD", E: "#BDBDBD", G: "#BDBDBD",
+			H: "#BDBDBD", I: "#BDBDBD", L: "#BDBDBD", K: "#BDBDBD",
+			M: "#BDBDBD", F: "#BDBDBD", P: "#BDBDBD",
+			S: "#2196F3", T: "#FF9800", Y: "#9C27B0",
+			W: "#BDBDBD", V: "#BDBDBD",
+		},
+		textColors: {
+			A: "#555", R: "#555", N: "#555", D: "#555",
+			C: "#555", Q: "#555", E: "#555", G: "#555",
+			H: "#555", I: "#555", L: "#555", K: "#555",
+			M: "#555", F: "#555", P: "#555",
+			S: "#FFF", T: "#FFF", Y: "#FFF",
+			W: "#555", V: "#555",
+		},
+	},
 };

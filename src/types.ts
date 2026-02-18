@@ -29,7 +29,9 @@ export type AAColorSchemeId =
 	| "hydrophobicity"
 	| "polarity"
 	| "charge"
-	| "chemical";
+	| "chemical"
+	| "cysteine"
+	| "phosphorylation";
 
 /** Color scheme identifier strings for nucleotides */
 export type NucleotideColorSchemeId =
