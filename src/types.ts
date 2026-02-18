@@ -178,7 +178,7 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	residuesPerLine: 60,
 	showPositionNumbers: true,
 	sequenceFontSize: 14,
-	summaryExpanded: true,
+	summaryExpanded: false,
 	assumeDisulfideBonds: false,
 	mafftPath: "mafft",
 	alignmentOutputDir: "Plasmid design/alignments",
