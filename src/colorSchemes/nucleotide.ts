@@ -43,6 +43,22 @@ export const NUCLEOTIDE_SCHEMES: Record<NucleotideColorSchemeId, ColorScheme> = 
 		},
 	},
 
+	"neutral": {
+		id: "neutral",
+		name: "Neutral",
+		type: "nucleotide",
+		description: "Uniform muted background — lets annotations stand out",
+		colors: { A: "", T: "", U: "", G: "", C: "" },
+	},
+
+	"search": {
+		id: "search",
+		name: "Search",
+		type: "nucleotide",
+		description: "Neutral background with subsequence search highlighting",
+		colors: { A: "", T: "", U: "", G: "", C: "" },
+	},
+
 	"complementary": {
 		id: "complementary",
 		name: "Complementary Pairs",

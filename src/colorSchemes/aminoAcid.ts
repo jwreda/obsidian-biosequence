@@ -261,6 +261,30 @@ export const AA_SCHEMES: Record<AAColorSchemeId, ColorScheme> = {
 		},
 	},
 
+	neutral: {
+		id: "neutral",
+		name: "Neutral",
+		type: "aa",
+		description: "Uniform muted background — lets annotations stand out",
+		colors: {
+			A: "", R: "", N: "", D: "", C: "", Q: "", E: "", G: "",
+			H: "", I: "", L: "", K: "", M: "", F: "", P: "", S: "",
+			T: "", W: "", Y: "", V: "",
+		},
+	},
+
+	search: {
+		id: "search",
+		name: "Search",
+		type: "aa",
+		description: "Neutral background with subsequence search highlighting",
+		colors: {
+			A: "", R: "", N: "", D: "", C: "", Q: "", E: "", G: "",
+			H: "", I: "", L: "", K: "", M: "", F: "", P: "", S: "",
+			T: "", W: "", Y: "", V: "",
+		},
+	},
+
 	phosphorylation: {
 		id: "phosphorylation",
 		name: "Phosphorylation",

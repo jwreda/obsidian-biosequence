@@ -29,6 +29,7 @@ import {
 	createReflowObserver,
 	computeInitialResiduesPerLine,
 } from "./reflowManager";
+import { applySearchHighlight } from "./searchHighlight";
 
 const VALID_DNA = new Set("ATGC".split(""));
 const VALID_RNA = new Set("AUGC".split(""));
@@ -219,6 +220,7 @@ function renderLegend(
 ): void {
 	const metadata = NUCLEOTIDE_LEGEND_DATA[schemeId];
 	if (!metadata) return;
+	if (metadata.legendType === "categorical" && (!metadata.groups || metadata.groups.length === 0)) return;
 
 	const details = container.createEl("details", {
 		cls: "biosequence-legend",
@@ -278,8 +280,6 @@ function renderColoredSequence(
 		for (let i = start; i < end; i++) {
 			const ch = sequence.charAt(i);
 			const bgColor = scheme.colors[ch] ?? "#E0E0E0";
-			const textColor =
-				scheme.textColors?.[ch] ?? autoContrast(bgColor);
 
 			// Build tooltip with feature names at this position
 			const featuresAtPos = allSegments.filter(
@@ -297,8 +297,15 @@ function renderColoredSequence(
 				title,
 			});
 			span.dataset["pos"] = String(i);
-			span.style.backgroundColor = bgColor;
-			span.style.color = textColor;
+
+			if (bgColor === "") {
+				span.classList.add("biosequence-residue-neutral");
+			} else {
+				const textColor =
+					scheme.textColors?.[ch] ?? autoContrast(bgColor);
+				span.style.backgroundColor = bgColor;
+				span.style.color = textColor;
+			}
 
 			if (invalidSet.has(i)) {
 				span.addClass("invalid");
@@ -425,6 +432,7 @@ export function renderNucleotideBlock(
 	let currentSchemeId = defaultScheme;
 	let currentDisplayMode: AnnotationDisplayMode = settings.annotationDisplayMode;
 	let selectionCleanup: (() => void) | null = null;
+	let searchTerm = "";
 
 	function render(residuesPerLine: number): void {
 		// Match library features and merge with inline/range segments
@@ -466,6 +474,31 @@ export function renderNucleotideBlock(
 
 		renderLegend(container, currentSchemeId);
 
+		// Search bar (only when search scheme is active)
+		let searchBarEl: HTMLElement | null = null;
+		if (currentSchemeId === "search") {
+			searchBarEl = container.createDiv({ cls: "biosequence-search-bar" });
+			const searchInput = searchBarEl.createEl("input", {
+				type: "text",
+				placeholder: "Search sequence\u2026",
+				cls: "biosequence-search-input",
+			}) as HTMLInputElement;
+			searchInput.value = searchTerm;
+
+			const matchInfo = searchBarEl.createSpan({ cls: "biosequence-search-match-info" });
+
+			const clearBtn = searchBarEl.createEl("button", {
+				text: "\u00D7",
+				cls: "biosequence-search-clear",
+				title: "Clear search",
+			});
+			clearBtn.style.visibility = searchTerm ? "visible" : "hidden";
+
+			(searchBarEl as any)._searchInput = searchInput;
+			(searchBarEl as any)._matchInfo = matchInfo;
+			(searchBarEl as any)._clearBtn = clearBtn;
+		}
+
 		// Create seqDiv first, attach selection handlers (they query DOM dynamically),
 		// then populate sequence lines with selectRange available for annotations
 		const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
@@ -489,6 +522,41 @@ export function renderNucleotideBlock(
 			currentDisplayMode,
 			selection.selectRange
 		);
+
+		// Attach search handlers after sequence is rendered
+		if (searchBarEl && currentSchemeId === "search") {
+			const searchInput = (searchBarEl as any)._searchInput as HTMLInputElement;
+			const matchInfo = (searchBarEl as any)._matchInfo as HTMLElement;
+			const clearBtn = (searchBarEl as any)._clearBtn as HTMLElement;
+
+			const updateSearch = (): void => {
+				searchTerm = searchInput.value;
+				clearBtn.style.visibility = searchTerm ? "visible" : "hidden";
+				const count = applySearchHighlight(
+					seqDiv, parsed.sequence, searchTerm, settings.searchHighlightColor
+				);
+				if (searchTerm.length === 0) {
+					matchInfo.textContent = "";
+				} else {
+					matchInfo.textContent = `${count} match${count !== 1 ? "es" : ""}`;
+					if (count === 0) {
+						matchInfo.classList.add("no-matches");
+					} else {
+						matchInfo.classList.remove("no-matches");
+					}
+				}
+			};
+
+			searchInput.addEventListener("input", updateSearch);
+			clearBtn.addEventListener("click", () => {
+				searchInput.value = "";
+				updateSearch();
+				searchInput.focus();
+			});
+
+			if (searchTerm) updateSearch();
+			searchInput.focus();
+		}
 
 		// Render annotation legend
 		if (allSegments.length > 0) {

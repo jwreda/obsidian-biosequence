@@ -31,13 +31,17 @@ export type AAColorSchemeId =
 	| "charge"
 	| "chemical"
 	| "cysteine"
-	| "phosphorylation";
+	| "phosphorylation"
+	| "neutral"
+	| "search";
 
 /** Color scheme identifier strings for nucleotides */
 export type NucleotideColorSchemeId =
 	| "default"
 	| "purine-pyrimidine"
-	| "complementary";
+	| "complementary"
+	| "neutral"
+	| "search";
 
 /** A color scheme maps single-letter residue codes to CSS color strings */
 export interface ColorScheme {
@@ -118,6 +122,7 @@ export interface BiosequenceSettings {
 	conservationSymbols: ConservationSymbols;
 	featureLibrary: FeatureEntry[];
 	annotationDisplayMode: AnnotationDisplayMode;
+	searchHighlightColor: string;
 }
 
 /** Amino acid composition result */
@@ -191,4 +196,5 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	},
 	featureLibrary: [],
 	annotationDisplayMode: "ribbons" as AnnotationDisplayMode,
+	searchHighlightColor: "#FF6D00",
 };

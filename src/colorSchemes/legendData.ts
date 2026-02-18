@@ -119,6 +119,10 @@ export const AA_LEGEND_DATA: Record<AAColorSchemeId, ColorSchemeMetadata> = {
 		],
 	},
 
+	neutral: { legendType: "categorical", groups: [] },
+
+	search: { legendType: "categorical", groups: [] },
+
 	phosphorylation: {
 		legendType: "categorical",
 		groups: [
@@ -148,6 +152,10 @@ export const NUCLEOTIDE_LEGEND_DATA: Record<NucleotideColorSchemeId, ColorScheme
 			{ label: "Pyrimidines", residues: ["C", "T", "U"], color: "#FF8F00", textColor: "#333" },
 		],
 	},
+
+	"neutral": { legendType: "categorical", groups: [] },
+
+	"search": { legendType: "categorical", groups: [] },
 
 	"complementary": {
 		legendType: "categorical",

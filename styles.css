@@ -66,6 +66,58 @@
 	margin-left: auto;
 }
 
+/* Search bar (in sequence viewer, for Search scheme) */
+.biosequence-search-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 8px;
+	padding: 4px 0;
+}
+
+.biosequence-search-input {
+	flex: 1;
+	max-width: 300px;
+	padding: 4px 8px;
+	font-size: 0.85em;
+	font-family: var(--font-monospace);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.biosequence-search-input:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+.biosequence-search-match-info {
+	font-size: 0.8em;
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.biosequence-search-match-info.no-matches {
+	color: var(--text-error);
+}
+
+.biosequence-search-clear {
+	padding: 2px 8px;
+	font-size: 1em;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-muted);
+	cursor: pointer;
+	line-height: 1;
+}
+
+.biosequence-search-clear:hover {
+	color: var(--text-normal);
+	border-color: var(--interactive-accent);
+}
+
 /* Sequence block */
 .biosequence-sequence {
 	white-space: pre-wrap;
@@ -117,6 +169,12 @@
 	z-index: 1;
 	position: relative;
 	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Neutral/search scheme: theme-adaptive muted background */
+.biosequence-residue.biosequence-residue-neutral {
+	background-color: var(--background-secondary-alt);
+	color: var(--text-muted);
 }
 
 /* Invalid residue override */

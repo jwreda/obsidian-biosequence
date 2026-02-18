@@ -209,6 +209,18 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName("Search highlight color")
+			.setDesc("Accent color used to highlight matches in the Search color scheme")
+			.addColorPicker((picker) =>
+				picker
+					.setValue(this.plugin.settings.searchHighlightColor)
+					.onChange(async (value) => {
+						this.plugin.settings.searchHighlightColor = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Expand properties by default")
 			.setDesc("Whether the sequence properties panel starts expanded or collapsed")
 			.addToggle((toggle) =>
