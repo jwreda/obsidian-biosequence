@@ -152,6 +152,8 @@ export function renderLineRibbons(
 
 		lineWrapper.appendChild(ribbonRow);
 	}
+
+	lineWrapper.classList.add("has-ribbons");
 }
 
 /**

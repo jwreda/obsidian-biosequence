@@ -519,6 +519,17 @@
 	margin-bottom: 2px;
 }
 
+.biosequence-line-wrapper.has-ribbons {
+	padding-bottom: 8px;
+	margin-bottom: 10px;
+	border-bottom: 1px solid var(--text-faint);
+}
+
+.biosequence-line-wrapper.has-ribbons:last-child {
+	border-bottom: none;
+	margin-bottom: 0;
+}
+
 /* Ribbon row below a sequence line */
 .biosequence-ribbon-row {
 	position: relative;
@@ -712,6 +723,44 @@
 .biosequence-feature-toolbar button:hover {
 	border-color: var(--interactive-accent);
 	background-color: var(--background-modifier-hover);
+}
+
+/* Feature library search/filter bar */
+.biosequence-feature-search {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 8px;
+}
+
+.biosequence-feature-search-input {
+	flex: 1;
+	padding: 4px 8px;
+	font-size: 0.85em;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.biosequence-feature-search-input:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+.biosequence-feature-search-clear {
+	padding: 4px 8px;
+	font-size: 1em;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-muted);
+	cursor: pointer;
+	line-height: 1;
+}
+
+.biosequence-feature-search-clear:hover {
+	color: var(--text-normal);
+	border-color: var(--interactive-accent);
 }
 
 .biosequence-feature-list {

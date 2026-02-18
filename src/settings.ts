@@ -87,6 +87,7 @@ function parseTsvEditorContent(text: string): { features: FeatureEntry[]; errors
 export class BiosequenceSettingTab extends PluginSettingTab {
 	plugin: BiosequencePlugin;
 	private tsvEditorActive: boolean = false;
+	private featureFilter: string = "";
 
 	constructor(app: App, plugin: BiosequencePlugin) {
 		super(app, plugin);
@@ -389,6 +390,22 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			return;
 		}
 
+		// Search/filter bar
+		const searchBar = containerEl.createDiv({ cls: "biosequence-feature-search" });
+		const searchInput = searchBar.createEl("input", {
+			type: "text",
+			placeholder: "Filter features\u2026",
+			cls: "biosequence-feature-search-input",
+		}) as HTMLInputElement;
+		searchInput.value = this.featureFilter;
+
+		const clearBtn = searchBar.createEl("button", {
+			text: "\u00D7",
+			cls: "biosequence-feature-search-clear",
+			title: "Clear filter",
+		});
+		clearBtn.style.visibility = this.featureFilter ? "visible" : "hidden";
+
 		// Feature list
 		const listContainer = containerEl.createDiv({ cls: "biosequence-feature-list" });
 
@@ -402,6 +419,33 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		for (const feature of this.plugin.settings.featureLibrary) {
 			this.renderFeatureRow(listContainer, feature);
+		}
+
+		// Filter logic (DOM-based: toggles row visibility without re-rendering)
+		const filterRows = (): void => {
+			const term = searchInput.value.toLowerCase();
+			this.featureFilter = term;
+			clearBtn.style.visibility = term ? "visible" : "hidden";
+			const rows = listContainer.querySelectorAll<HTMLElement>(".biosequence-feature-row");
+			for (const row of Array.from(rows)) {
+				const name = row.dataset["featureName"] ?? "";
+				const seq = row.dataset["featureSeq"] ?? "";
+				row.style.display = (name.includes(term) || seq.includes(term)) ? "" : "none";
+			}
+		};
+
+		searchInput.addEventListener("input", filterRows);
+
+		clearBtn.addEventListener("click", () => {
+			searchInput.value = "";
+			this.featureFilter = "";
+			filterRows();
+			searchInput.focus();
+		});
+
+		// Apply persisted filter after rendering all rows
+		if (this.featureFilter) {
+			filterRows();
 		}
 	}
 
@@ -477,6 +521,8 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 	private renderFeatureRow(container: HTMLElement, feature: FeatureEntry): void {
 		const row = container.createDiv({ cls: "biosequence-feature-row" });
+		row.dataset["featureName"] = feature.name.toLowerCase();
+		row.dataset["featureSeq"] = feature.sequence.toLowerCase();
 
 		// Enable checkbox
 		const checkbox = row.createEl("input", { type: "checkbox" }) as HTMLInputElement;
