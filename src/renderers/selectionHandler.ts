@@ -11,7 +11,8 @@ export interface SelectionHandlers {
 export function attachSelectionHandlers(
 	sequenceContainer: HTMLElement,
 	blockContainer: HTMLElement,
-	sequence: string
+	sequence: string,
+	onSearch?: (subsequence: string) => void
 ): SelectionHandlers {
 	let isSelecting = false;
 	let selectionStart = -1;
@@ -79,6 +80,19 @@ export function attachSelectionHandlers(
 				copyBtn.textContent = "Copy";
 			}, 1500);
 		});
+
+		if (onSearch) {
+			const searchBtn = selectionBar.createEl("button", {
+				cls: "biosequence-selection-copy",
+				text: "Search",
+			});
+
+			searchBtn.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const subseq = sequence.substring(sel.start, sel.end + 1);
+				onSearch(subseq);
+			});
+		}
 
 		// Insert selection bar before the sequence container
 		sequenceContainer.parentElement?.insertBefore(

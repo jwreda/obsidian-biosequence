@@ -522,7 +522,12 @@ export function renderAminoAcidBlock(
 		const selection = attachSelectionHandlers(
 			seqDiv,
 			container,
-			parsed.sequence
+			parsed.sequence,
+			(subsequence) => {
+				searchTerm = subsequence;
+				currentSchemeId = "search";
+				render(residuesPerLine);
+			}
 		);
 		selectionCleanup = selection.cleanup;
 
