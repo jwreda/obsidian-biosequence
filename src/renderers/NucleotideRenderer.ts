@@ -312,6 +312,13 @@ function renderColoredSequence(
 			}
 		}
 
+		if (settings.showPositionNumbers) {
+			lineDiv.createSpan({
+				cls: "biosequence-gutter-right",
+				text: String(end),
+			});
+		}
+
 		// Render ribbon annotations for this line
 		if (allSegments.length > 0 && displayMode === "ribbons") {
 			renderLineRibbons(

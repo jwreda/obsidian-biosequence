@@ -1,69 +1,9 @@
 /**
- * Creates a temporary DOM probe element to measure the actual rendered width
- * of a single residue span, including CSS margins. This avoids hardcoding
- * pixel widths that break at different font sizes or DPI settings.
+ * Formula-based reflow manager.
+ *
+ * Residue width  = fontSize * 1.2  (margin is 0, so no +1 correction)
+ * Gutter width   = 5 * 0.8 * fontSize + 10  (5em at 0.8em font-size + 10px padding)
  */
-function measureResidueWidth(container: HTMLElement, fontSize: number): number {
-	const wrapper = document.createElement("div");
-	wrapper.className = "biosequence-sequence";
-	wrapper.style.cssText =
-		`font-size: ${fontSize}px; position: absolute; visibility: hidden; ` +
-		`pointer-events: none; height: 0; overflow: hidden;`;
-
-	const residuesSpan = document.createElement("span");
-	residuesSpan.className = "biosequence-residues";
-
-	const residue = document.createElement("span");
-	residue.className = "biosequence-residue";
-	residue.textContent = "W";
-
-	residuesSpan.appendChild(residue);
-	wrapper.appendChild(residuesSpan);
-	container.appendChild(wrapper);
-
-	const rect = residue.getBoundingClientRect();
-	const style = getComputedStyle(residue);
-	const marginLeft = parseFloat(style.marginLeft) || 0;
-	const marginRight = parseFloat(style.marginRight) || 0;
-	const totalWidth = rect.width + marginLeft + marginRight;
-
-	container.removeChild(wrapper);
-
-	// Fallback to the old heuristic if measurement failed
-	if (totalWidth <= 0) {
-		return fontSize * 1.2 + 1;
-	}
-	return totalWidth;
-}
-
-/**
- * Creates a temporary DOM probe to measure the rendered width of the gutter
- * element (line-number column), matching production CSS classes.
- */
-function measureGutterWidth(container: HTMLElement, fontSize: number): number {
-	const wrapper = document.createElement("div");
-	wrapper.className = "biosequence-sequence";
-	wrapper.style.cssText =
-		`font-size: ${fontSize}px; position: absolute; visibility: hidden; ` +
-		`pointer-events: none; height: 0; overflow: hidden;`;
-
-	const gutter = document.createElement("span");
-	gutter.className = "biosequence-gutter";
-	gutter.textContent = "99999";
-
-	wrapper.appendChild(gutter);
-	container.appendChild(wrapper);
-
-	const width = gutter.getBoundingClientRect().width;
-
-	container.removeChild(wrapper);
-
-	// Fallback to the old heuristic if measurement failed
-	if (width <= 0) {
-		return 5 * 0.8 * fontSize + 10;
-	}
-	return width;
-}
 
 /**
  * Creates a ResizeObserver that monitors the container width and computes
@@ -80,9 +20,8 @@ export function createReflowObserver(
 	const DEBOUNCE_MS = 150;
 	const THRESHOLD_PX = 5;
 
-	// Measure actual rendered widths from the DOM once
-	const measuredResidueWidth = measureResidueWidth(container, fontSize);
-	const measuredGutterWidth = measureGutterWidth(container, fontSize);
+	const residueWidth = fontSize * 1.2;
+	const gutterWidth = 5 * 0.8 * fontSize + 10;
 
 	let lastWidth = 0;
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -91,7 +30,8 @@ export function createReflowObserver(
 		let availableWidth = containerWidth;
 
 		if (gutterActive) {
-			availableWidth -= measuredGutterWidth;
+			// Subtract both left and right gutters
+			availableWidth -= gutterWidth * 2;
 		}
 
 		// Account for container padding (16px each side)
@@ -104,7 +44,7 @@ export function createReflowObserver(
 			return 10;
 		}
 
-		const computed = Math.floor(availableWidth / measuredResidueWidth);
+		const computed = Math.floor(availableWidth / residueWidth);
 
 		// Clamp between 10 and maxPerLine
 		return Math.max(10, Math.min(computed, maxPerLine));
@@ -147,14 +87,14 @@ export function computeInitialResiduesPerLine(
 	maxPerLine: number,
 	extraOffsetPx: number = 0
 ): number {
-	// Measure actual rendered widths from the DOM
-	const measuredResidueWidth = measureResidueWidth(container, fontSize);
-	const measuredGutterWidth = measureGutterWidth(container, fontSize);
+	const residueWidth = fontSize * 1.2;
+	const gutterWidth = 5 * 0.8 * fontSize + 10;
 
 	let availableWidth = container.clientWidth;
 
 	if (gutterActive) {
-		availableWidth -= measuredGutterWidth;
+		// Subtract both left and right gutters
+		availableWidth -= gutterWidth * 2;
 	}
 
 	// Account for container padding
@@ -167,7 +107,7 @@ export function computeInitialResiduesPerLine(
 		return maxPerLine;
 	}
 
-	const computed = Math.floor(availableWidth / measuredResidueWidth);
+	const computed = Math.floor(availableWidth / residueWidth);
 
 	return Math.max(10, Math.min(computed, maxPerLine));
 }
