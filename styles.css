@@ -136,9 +136,10 @@
 /* Gutter (position numbers) */
 .biosequence-gutter {
 	display: inline-block;
-	width: 5em;
+	box-sizing: content-box;
+	width: 3.5em;
 	text-align: right;
-	padding-right: 10px;
+	padding-right: 8px;
 	color: var(--text-muted);
 	font-size: 0.8em;
 	flex-shrink: 0;
@@ -148,9 +149,10 @@
 /* Right gutter (end position numbers) */
 .biosequence-gutter-right {
 	display: inline-block;
-	width: 5em;
+	box-sizing: content-box;
+	width: 3.5em;
 	text-align: left;
-	padding-left: 10px;
+	padding-left: 8px;
 	color: var(--text-muted);
 	font-size: 0.8em;
 	flex-shrink: 0;
@@ -166,6 +168,7 @@
 /* Individual residue */
 .biosequence-residue {
 	display: inline-block;
+	box-sizing: content-box;
 	width: 1.2em;
 	text-align: center;
 	border-radius: 2px;
@@ -372,6 +375,7 @@
 
 .biosequence-gap {
 	display: inline-block;
+	box-sizing: content-box;
 	width: 1.2em;
 	text-align: center;
 	color: var(--text-faint);

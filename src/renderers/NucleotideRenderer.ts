@@ -28,6 +28,7 @@ import { matchFeatures, mergeSegments } from "../features/featureMatcher";
 import {
 	createReflowObserver,
 	computeInitialResiduesPerLine,
+	measureResiduesPerLine,
 } from "./reflowManager";
 import { applySearchHighlight } from "./searchHighlight";
 
@@ -588,6 +589,16 @@ export function renderNucleotideBlock(
 	);
 
 	render(initialResiduesPerLine);
+
+	// One-shot DOM measurement: correct if formula underestimated
+	const measured = measureResiduesPerLine(
+		container,
+		settings.showPositionNumbers,
+		settings.residuesPerLine
+	);
+	if (measured !== null && measured > initialResiduesPerLine) {
+		render(measured);
+	}
 
 	// Attach reflow observer
 	createReflowObserver(
