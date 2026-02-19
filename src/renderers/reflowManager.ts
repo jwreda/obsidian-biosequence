@@ -34,8 +34,7 @@ export function createReflowObserver(
 			availableWidth -= gutterWidth * 2;
 		}
 
-		// Account for container padding (16px each side)
-		availableWidth -= 32;
+		// Note: containerWidth is contentRect.width which already excludes padding
 
 		// Subtract extra offset (e.g. alignment label width)
 		availableWidth -= extraOffsetPx;
