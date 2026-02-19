@@ -32,6 +32,7 @@ export type AAColorSchemeId =
 	| "chemical"
 	| "cysteine"
 	| "phosphorylation"
+	| "absorbance280"
 	| "neutral"
 	| "search";
 

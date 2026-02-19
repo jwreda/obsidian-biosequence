@@ -307,4 +307,25 @@ export const AA_SCHEMES: Record<AAColorSchemeId, ColorScheme> = {
 			W: "#555", V: "#555",
 		},
 	},
+
+	absorbance280: {
+		id: "absorbance280",
+		name: "Absorbance (280 nm)",
+		type: "aa",
+		description: "Highlights UV-absorbing residues at 280 nm (W, Y, C)",
+		colors: {
+			A: "#BDBDBD", R: "#BDBDBD", N: "#BDBDBD", D: "#BDBDBD",
+			C: "#00897B", Q: "#BDBDBD", E: "#BDBDBD", G: "#BDBDBD",
+			H: "#BDBDBD", I: "#BDBDBD", L: "#BDBDBD", K: "#BDBDBD",
+			M: "#BDBDBD", F: "#BDBDBD", P: "#BDBDBD", S: "#BDBDBD",
+			T: "#BDBDBD", W: "#7B1FA2", Y: "#F57F17", V: "#BDBDBD",
+		},
+		textColors: {
+			A: "#555", R: "#555", N: "#555", D: "#555",
+			C: "#FFF", Q: "#555", E: "#555", G: "#555",
+			H: "#555", I: "#555", L: "#555", K: "#555",
+			M: "#555", F: "#555", P: "#555", S: "#555",
+			T: "#555", W: "#FFF", Y: "#FFF", V: "#555",
+		},
+	},
 };

@@ -132,6 +132,16 @@ export const AA_LEGEND_DATA: Record<AAColorSchemeId, ColorSchemeMetadata> = {
 			{ label: "Other", residues: ["A", "R", "N", "D", "C", "Q", "E", "G", "H", "I", "L", "K", "M", "F", "P", "W", "V"], color: "#BDBDBD", textColor: "#555" },
 		],
 	},
+
+	absorbance280: {
+		legendType: "categorical",
+		groups: [
+			{ label: "Tryptophan [W]", residues: ["W"], color: "#7B1FA2", textColor: "#FFF" },
+			{ label: "Tyrosine [Y]", residues: ["Y"], color: "#F57F17", textColor: "#FFF" },
+			{ label: "Cysteine [C]", residues: ["C"], color: "#00897B", textColor: "#FFF" },
+			{ label: "Other", residues: ["A", "R", "N", "D", "Q", "E", "G", "H", "I", "L", "K", "M", "F", "P", "S", "T", "V"], color: "#BDBDBD", textColor: "#555" },
+		],
+	},
 };
 
 export const NUCLEOTIDE_LEGEND_DATA: Record<NucleotideColorSchemeId, ColorSchemeMetadata> = {
