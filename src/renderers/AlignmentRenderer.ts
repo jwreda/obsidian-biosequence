@@ -267,21 +267,23 @@ function renderAlignmentChunk(
 	for (let i = chunkStart; i < chunkEnd; i++) {
 		const internalCode =
 			i < conservation.length ? conservation.charAt(i) : " ";
-		const displayChar = getDisplayMarker(
-			internalCode,
-			settings.conservationSymbols
-		);
 
-		const span = consResidues.createSpan();
-		span.textContent = displayChar;
-		span.style.display = "inline-block";
-		span.style.width = "1.2em";
-		span.style.textAlign = "center";
-		span.style.margin = "0 0.5px";
+		const span = consResidues.createSpan({ cls: "biosequence-conservation-marker" });
 
-		const cls = getConservationClass(internalCode);
-		if (cls) {
-			span.addClass(cls);
+		if (internalCode === "_") {
+			// Gap position: render empty spacer (gap is already visible in sequences)
+			span.textContent = "\u00A0";
+			span.addClass("biosequence-conservation-gap");
+		} else {
+			const displayChar = getDisplayMarker(
+				internalCode,
+				settings.conservationSymbols
+			);
+			span.textContent = displayChar;
+			const cls = getConservationClass(internalCode);
+			if (cls) {
+				span.addClass(cls);
+			}
 		}
 	}
 
@@ -335,16 +337,21 @@ function renderResidueSpans(
 		} else {
 			const upper = ch.toUpperCase();
 			const bgColor = scheme.colors[upper] ?? "#E0E0E0";
-			const textColor =
-				scheme.textColors?.[upper] ?? autoContrast(bgColor);
 
 			const span = parent.createSpan({
 				cls: "biosequence-residue",
 				text: upper,
 				title: `${upper} (pos ${i + 1})`,
 			});
-			span.style.backgroundColor = bgColor;
-			span.style.color = textColor;
+
+			if (bgColor === "") {
+				span.classList.add("biosequence-residue-neutral");
+			} else {
+				const textColor =
+					scheme.textColors?.[upper] ?? autoContrast(bgColor);
+				span.style.backgroundColor = bgColor;
+				span.style.color = textColor;
+			}
 		}
 	}
 }
