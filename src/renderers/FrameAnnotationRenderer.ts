@@ -12,6 +12,8 @@
 import { BiosequenceSettings } from "../types";
 import { Frame, FrameId } from "../calculations/translation";
 import { ProteinMatch } from "../features/proteinFeatureMatcher";
+import { autoContrast } from "../colorSchemes/aminoAcid";
+import { highlightResidues, clearHighlights } from "./annotationRenderer";
 
 export const FRAME_ORDER: FrameId[] = ["+1", "+2", "+3", "-1", "-2", "-3"];
 
@@ -38,6 +40,7 @@ interface AaIndexEntry {
 export function renderFrameAnnotations(
 	lineWrapper: HTMLElement,
 	lineDiv: HTMLElement,
+	seqDiv: HTMLElement,
 	lineStart: number,
 	lineEnd: number,
 	ctx: FrameAnnotationContext,
@@ -145,6 +148,13 @@ export function renderFrameAnnotations(
 				const match = all[0]!;
 				cell.classList.add("biosequence-frame-cell-feature");
 				cell.style.backgroundColor = match.color;
+				// Contrast-aware text color for legibility on dark feature
+				// backgrounds. Stop/start cells override this via CSS so the
+				// semantic glyph color wins.
+				cell.style.color = autoContrast(match.color);
+				// Tag for cross-line hover linking. The key identifies a single
+				// ProteinMatch uniquely (one feature, one frame, one occurrence).
+				cell.dataset["matchKey"] = `${match.featureId}|${match.frame}|${match.aaStart}`;
 				const tip = all
 					.map(
 						(m) =>
@@ -152,6 +162,32 @@ export function renderFrameAnnotations(
 					)
 					.join("\n");
 				cell.title = tip;
+
+				// Hover: light up every sibling cell with the same match key
+				// across all wrapped lines, and highlight the source codons on
+				// the DNA strand using the existing residue highlight helper.
+				cell.addEventListener("mouseenter", () => {
+					const key = cell.dataset["matchKey"];
+					if (!key) return;
+					const siblings = seqDiv.querySelectorAll<HTMLElement>(
+						`.biosequence-frame-cell[data-match-key="${CSS.escape(key)}"]`
+					);
+					for (const sib of Array.from(siblings)) {
+						sib.classList.add("biosequence-frame-cell-hover");
+					}
+					highlightResidues(seqDiv, match.ntStart, match.ntEnd, match.color);
+				});
+				cell.addEventListener("mouseleave", () => {
+					const key = cell.dataset["matchKey"];
+					if (!key) return;
+					const siblings = seqDiv.querySelectorAll<HTMLElement>(
+						`.biosequence-frame-cell[data-match-key="${CSS.escape(key)}"]`
+					);
+					for (const sib of Array.from(siblings)) {
+						sib.classList.remove("biosequence-frame-cell-hover");
+					}
+					clearHighlights(seqDiv);
+				});
 			} else {
 				cell.title = `${codon.aa} (frame ${frameId}, aa ${codon.aaIndex + 1}, nt ${ntStart + 1}–${ntStart + 3})`;
 			}
