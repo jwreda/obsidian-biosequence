@@ -1059,3 +1059,71 @@
 	margin-top: 8px;
 }
 
+/* ── Inline frame annotations ───────────────────────────────────────── */
+
+.biosequence-line-wrapper.has-frame-annotations {
+	margin-bottom: 0.4em;
+}
+
+.biosequence-frame-row {
+	display: flex;
+	align-items: center;
+	min-height: 1.2em;
+	margin-top: 1px;
+}
+
+.biosequence-frame-label {
+	width: 3.5em;
+	flex-shrink: 0;
+	text-align: right;
+	padding-right: 0.5em;
+	color: var(--text-muted);
+	font-size: 0.85em;
+	font-family: var(--font-monospace);
+	box-sizing: content-box;
+}
+
+.biosequence-frame-cells {
+	position: relative;
+	flex: 1;
+	min-height: 1.2em;
+}
+
+.biosequence-frame-cell {
+	position: absolute;
+	top: 0;
+	height: 1.2em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	line-height: 1;
+	border-radius: 2px;
+	box-sizing: border-box;
+	color: var(--text-normal);
+	pointer-events: auto;
+}
+
+.biosequence-frame-cell-feature {
+	cursor: help;
+	color: #000;
+	font-weight: 600;
+}
+
+.biosequence-frame-cell-stop {
+	color: var(--text-error);
+	font-weight: bold;
+}
+
+.biosequence-frame-cell-start {
+	color: var(--text-success);
+	font-weight: bold;
+}
+
+.biosequence-frame-cell-feature.biosequence-frame-cell-stop,
+.biosequence-frame-cell-feature.biosequence-frame-cell-start {
+	/* When a stop/start lands inside a matched feature, keep the feature
+	   background but preserve the stop/start glyph color. */
+	color: #000;
+}
