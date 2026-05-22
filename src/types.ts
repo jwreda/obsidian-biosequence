@@ -1,3 +1,6 @@
+import type { FrameAnnotationMode } from "./features/proteinFeatureMatcher";
+export type { FrameAnnotationMode } from "./features/proteinFeatureMatcher";
+
 /** The three supported biological sequence types */
 export type SequenceType = "aa" | "dna" | "rna";
 
@@ -124,7 +127,7 @@ export interface BiosequenceSettings {
 	featureLibrary: FeatureEntry[];
 	annotationDisplayMode: AnnotationDisplayMode;
 	searchHighlightColor: string;
-	showFrameAnnotations: boolean;
+	frameAnnotationMode: FrameAnnotationMode;
 }
 
 /** Amino acid composition result */
@@ -199,5 +202,5 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	featureLibrary: [],
 	annotationDisplayMode: "ribbons" as AnnotationDisplayMode,
 	searchHighlightColor: "#FF6D00",
-	showFrameAnnotations: true,
+	frameAnnotationMode: "all",
 };

@@ -180,16 +180,27 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Show 6-frame annotations on DNA blocks")
-			.setDesc("Interleave per-frame protein rows directly beneath each wrapped DNA line. Only frames containing at least one matched protein feature are shown.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.showFrameAnnotations)
+			.setName("Default frame display (DNA)")
+			.setDesc("Default frame-annotation mode for new DNA blocks. Per-block override is available in the block's toolbar.")
+			.addDropdown((dropdown) => {
+				dropdown.addOption("none", "Off");
+				dropdown.addOption("all", "All 6 frames (matches only)");
+				dropdown.addOption("forward", "Forward frames (matches only)");
+				dropdown.addOption("reverse", "Reverse frames (matches only)");
+				dropdown.addOption("+1", "Frame +1");
+				dropdown.addOption("+2", "Frame +2");
+				dropdown.addOption("+3", "Frame +3");
+				dropdown.addOption("-1", "Frame -1");
+				dropdown.addOption("-2", "Frame -2");
+				dropdown.addOption("-3", "Frame -3");
+				dropdown
+					.setValue(this.plugin.settings.frameAnnotationMode)
 					.onChange(async (value) => {
-						this.plugin.settings.showFrameAnnotations = value;
+						this.plugin.settings.frameAnnotationMode =
+							value as typeof this.plugin.settings.frameAnnotationMode;
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+			});
 
 		new Setting(containerEl)
 			.setName("Font size")

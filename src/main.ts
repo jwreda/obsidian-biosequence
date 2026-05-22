@@ -138,6 +138,15 @@ export default class BiosequencePlugin extends Plugin {
 				})
 			);
 		}
+		// One-time migration: showFrameAnnotations (boolean) → frameAnnotationMode
+		// True maps to the "all" mode; false maps to "none". Drop the old key.
+		if (saved && Object.prototype.hasOwnProperty.call(saved, "showFrameAnnotations")
+			&& !(saved as any).frameAnnotationMode) {
+			this.settings.frameAnnotationMode = (saved as any).showFrameAnnotations
+				? "all"
+				: "none";
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings(): Promise<void> {
