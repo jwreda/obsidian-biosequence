@@ -4,6 +4,7 @@ import { BiosequenceSettingTab } from "./settings";
 import { renderAminoAcidBlock } from "./renderers/AminoAcidRenderer";
 import { renderNucleotideBlock } from "./renderers/NucleotideRenderer";
 import { renderAlignmentBlock } from "./renderers/AlignmentRenderer";
+import { renderTranslateBlock } from "./renderers/TranslateRenderer";
 import { AlignmentModal } from "./alignment/AlignmentModal";
 import { runMafft } from "./alignment/mafftRunner";
 import { parseFasta } from "./alignment/fastaParser";
@@ -24,6 +25,7 @@ export default class BiosequencePlugin extends Plugin {
 
 		const dnaHandler = (source: string, el: HTMLElement): void => {
 			renderNucleotideBlock(source, el, "dna", this.settings);
+			renderTranslateBlock(source, el, this.settings);
 		};
 		for (const tag of ["dna", "DNA", "Dna"]) {
 			this.registerMarkdownCodeBlockProcessor(tag, dnaHandler);
