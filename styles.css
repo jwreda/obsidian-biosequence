@@ -1107,8 +1107,8 @@
 
 .biosequence-frame-cell-feature {
 	cursor: help;
-	color: #000;
 	font-weight: 600;
+	/* Text color is applied inline per cell via autoContrast(match.color). */
 }
 
 .biosequence-frame-cell-stop {
@@ -1121,9 +1121,19 @@
 	font-weight: bold;
 }
 
-.biosequence-frame-cell-feature.biosequence-frame-cell-stop,
+.biosequence-frame-cell-feature.biosequence-frame-cell-stop {
+	/* Semantic stop color wins over the matched-feature contrast color. */
+	color: var(--text-error);
+}
+
 .biosequence-frame-cell-feature.biosequence-frame-cell-start {
-	/* When a stop/start lands inside a matched feature, keep the feature
-	   background but preserve the stop/start glyph color. */
-	color: #000;
+	/* Semantic start color wins over the matched-feature contrast color. */
+	color: var(--text-success);
+}
+
+.biosequence-frame-cell-hover {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
+	filter: brightness(1.1);
+	z-index: 1;
 }
