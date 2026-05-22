@@ -35,7 +35,7 @@ import { applySearchHighlight } from "./searchHighlight";
 const VALID_DNA = new Set("ATGC".split(""));
 const VALID_RNA = new Set("AUGC".split(""));
 
-function parseNucleotideSequence(
+export function parseNucleotideSequence(
 	source: string,
 	type: SequenceType
 ): ParsedSequence {

@@ -16,21 +16,9 @@ import {
 	annotatedFrameIds,
 	ProteinMatch,
 } from "../features/proteinFeatureMatcher";
+import { parseNucleotideSequence } from "./NucleotideRenderer";
 
 const FRAME_ORDER: FrameId[] = ["+1", "+2", "+3", "-1", "-2", "-3"];
-
-/**
- * Strip FASTA header line (if any) and non-letter characters from `source`,
- * returning an uppercase ACGTN-ish string suitable for translation.
- * Mirrors the lenient preprocessing in parseNucleotideSequence.
- */
-function sanitizeDnaSource(source: string): string {
-	const lines = source.split("\n");
-	const body = lines
-		.filter((line) => !line.startsWith(">"))
-		.join("");
-	return body.replace(/[^A-Za-z]/g, "").toUpperCase();
-}
 
 export function renderTranslateBlock(
 	source: string,
@@ -39,7 +27,8 @@ export function renderTranslateBlock(
 ): void {
 	if (!settings.showTranslateBlock) return;
 
-	const sequence = sanitizeDnaSource(source);
+	const parsed = parseNucleotideSequence(source, "dna");
+	const sequence = parsed.sequence;
 	if (sequence.length < 3) return;
 
 	const container = parentEl.createDiv({ cls: "biosequence-translate-block" });
