@@ -23,7 +23,7 @@ import {
 	colorizeSegments,
 } from "../parsing/segmentParser";
 import { attachSelectionHandlers } from "./selectionHandler";
-import { renderLineRibbons, renderBadgeBar, renderAnnotationLegend } from "./annotationRenderer";
+import { renderLineRibbons, renderBadgeBar, renderAnnotationLegend, clearHighlights } from "./annotationRenderer";
 import { matchFeatures, mergeSegments } from "../features/featureMatcher";
 import {
 	createReflowObserver,
@@ -513,6 +513,10 @@ export function renderNucleotideBlock(
 			selectionCleanup();
 			selectionCleanup = null;
 		}
+
+		// Defensive: clear any in-flight residue highlights from a prior render
+		// (e.g., if reflow fires while the user is mid-hover on a frame cell).
+		clearHighlights(container);
 
 		container.empty();
 		const scheme = getNucleotideScheme(currentSchemeId);

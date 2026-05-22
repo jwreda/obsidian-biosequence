@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type BiosequencePlugin from "./main";
-import { AAColorSchemeId, NucleotideColorSchemeId, AnnotationDisplayMode, FeatureEntry } from "./types";
+import { AAColorSchemeId, FrameAnnotationMode, NucleotideColorSchemeId, AnnotationDisplayMode, FeatureEntry } from "./types";
 import { getAASchemeList, getNucleotideSchemeList } from "./colorSchemes/index";
 import { FeatureEditorModal } from "./features/FeatureEditorModal";
 import { FeatureImportModal } from "./features/FeatureImportModal";
@@ -196,8 +196,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 				dropdown
 					.setValue(this.plugin.settings.frameAnnotationMode)
 					.onChange(async (value) => {
-						this.plugin.settings.frameAnnotationMode =
-							value as typeof this.plugin.settings.frameAnnotationMode;
+						this.plugin.settings.frameAnnotationMode = value as FrameAnnotationMode;
 						await this.plugin.saveSettings();
 					});
 			});
