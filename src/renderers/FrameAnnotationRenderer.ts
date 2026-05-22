@@ -56,11 +56,16 @@ export function renderFrameAnnotations(
 	}
 	if (posMap.size === 0) return;
 
-	// Reference origin for the absolute-positioned cells: the
-	// .biosequence-frame-cells container we'll create per row. Cells container
-	// shares left edge with .biosequence-residues (both are flex children to
-	// the right of the gutter), but we compute relative to the cells container
-	// itself so it composes cleanly under any future layout change.
+	// Hoist getBoundingClientRect into a single pass over posMap.
+	// Each cell in every frame row uses the same residue rects, so caching them
+	// here saves an O(codons × frames) layout read on large plasmids.
+	const leftByPos = new Map<number, number>();
+	let residueWidth = 0;
+	for (const [pos, el] of posMap) {
+		const rect = el.getBoundingClientRect();
+		leftByPos.set(pos, rect.left);
+		if (residueWidth === 0) residueWidth = rect.width;
+	}
 
 	const framesByID = new Map(ctx.frames.map((f) => [f.id, f]));
 	const matchesByFrame = new Map<FrameId, ProteinMatch[]>();
@@ -113,12 +118,12 @@ export function renderFrameAnnotations(
 
 		const cellsRect = cells.getBoundingClientRect();
 
-		// Precompute aa→match lookup for this frame, restricted to this line.
-		const matchAt = new Map<number, ProteinMatch>(); // first match wins
+		// Precompute aa→matches lookup for this frame.
+		// First entry per aaIndex is the "winner" used for background color;
+		// the full list is used for the multi-line tooltip.
 		const allAt = new Map<number, ProteinMatch[]>();
 		for (const m of frameMatches) {
 			for (let i = m.aaStart; i < m.aaEnd; i++) {
-				if (!matchAt.has(i)) matchAt.set(i, m);
 				if (!allAt.has(i)) allAt.set(i, []);
 				allAt.get(i)!.push(m);
 			}
@@ -126,23 +131,20 @@ export function renderFrameAnnotations(
 
 		for (const codon of codonsOnLine) {
 			const ntStart = frame.codonStartsForward[codon.aaIndex]!;
-			const anchorEl = posMap.get(ntStart);
-			if (!anchorEl) continue;
-
-			const anchorRect = anchorEl.getBoundingClientRect();
-			const residueWidth = anchorRect.width;
+			const anchorLeft = leftByPos.get(ntStart);
+			if (anchorLeft === undefined) continue;
 
 			const cell = document.createElement("div");
 			cell.className = "biosequence-frame-cell";
 			cell.textContent = codon.aa;
-			cell.style.left = `${anchorRect.left - cellsRect.left}px`;
+			cell.style.left = `${anchorLeft - cellsRect.left}px`;
 			cell.style.width = `${residueWidth * 3}px`;
 
-			const match = matchAt.get(codon.aaIndex);
-			if (match) {
+			const all = allAt.get(codon.aaIndex);
+			if (all && all.length > 0) {
+				const match = all[0]!;
 				cell.classList.add("biosequence-frame-cell-feature");
 				cell.style.backgroundColor = match.color;
-				const all = allAt.get(codon.aaIndex)!;
 				const tip = all
 					.map(
 						(m) =>
