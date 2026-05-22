@@ -32,7 +32,11 @@ import {
 } from "./reflowManager";
 import { applySearchHighlight } from "./searchHighlight";
 import { translateAllFrames } from "../calculations/translation";
-import { matchProteinFeatures, annotatedFrameIds } from "../features/proteinFeatureMatcher";
+import {
+	matchProteinFeatures,
+	visibleFramesForMode,
+	FrameAnnotationMode,
+} from "../features/proteinFeatureMatcher";
 import {
 	renderFrameAnnotations,
 	FrameAnnotationContext,
@@ -151,7 +155,8 @@ function renderToolbar(
 	onSchemeChange: (id: NucleotideColorSchemeId) => void,
 	currentDisplayMode: AnnotationDisplayMode,
 	onDisplayModeToggle: () => void,
-	onRefresh: () => void
+	onRefresh: () => void,
+	frameModeOptions: { current: FrameAnnotationMode; onChange: (mode: FrameAnnotationMode) => void } | null
 ): void {
 	const toolbar = container.createDiv({ cls: "biosequence-toolbar" });
 	toolbar.createSpan({
@@ -211,6 +216,32 @@ function renderToolbar(
 		title: `Switch to ${currentDisplayMode === "ribbons" ? "badge" : "ribbon"} annotations`,
 	});
 	modeBtn.addEventListener("click", onDisplayModeToggle);
+
+	// Frame-annotation mode select (DNA only).
+	if (frameModeOptions) {
+		const frameSelect = toolbar.createEl("select", {
+			cls: "biosequence-scheme-select biosequence-frame-mode-select",
+		});
+		const FRAME_MODE_OPTIONS: Array<{ value: FrameAnnotationMode; label: string }> = [
+			{ value: "none", label: "Frames: off" },
+			{ value: "all", label: "Frames: all 6" },
+			{ value: "forward", label: "Frames: forward" },
+			{ value: "reverse", label: "Frames: reverse" },
+			{ value: "+1", label: "Frame: +1" },
+			{ value: "+2", label: "Frame: +2" },
+			{ value: "+3", label: "Frame: +3" },
+			{ value: "-1", label: "Frame: -1" },
+			{ value: "-2", label: "Frame: -2" },
+			{ value: "-3", label: "Frame: -3" },
+		];
+		for (const opt of FRAME_MODE_OPTIONS) {
+			const optEl = frameSelect.createEl("option", { text: opt.label, value: opt.value });
+			if (opt.value === frameModeOptions.current) optEl.selected = true;
+		}
+		frameSelect.addEventListener("change", () => {
+			frameModeOptions.onChange(frameSelect.value as FrameAnnotationMode);
+		});
+	}
 
 	// Refresh button
 	const refreshBtn = toolbar.createEl("button", {
@@ -347,6 +378,7 @@ function renderColoredSequence(
 			renderFrameAnnotations(
 				lineWrapper,
 				lineDiv,
+				seqDiv,
 				start,
 				end,
 				frameContext,
@@ -458,6 +490,7 @@ export function renderNucleotideBlock(
 		type === "dna" ? settings.defaultDNAScheme : settings.defaultRNAScheme;
 	let currentSchemeId = defaultScheme;
 	let currentDisplayMode: AnnotationDisplayMode = settings.annotationDisplayMode;
+	let currentFrameMode: FrameAnnotationMode = settings.frameAnnotationMode;
 	let selectionCleanup: (() => void) | null = null;
 	let searchTerm = "";
 
@@ -466,12 +499,12 @@ export function renderNucleotideBlock(
 		const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, type);
 		const allSegments = mergeSegments(parsed.segments, featureMatches);
 
-		// Compute frame-annotation context (DNA only, gated by setting).
+		// Compute frame-annotation context (DNA only, gated by per-block mode).
 		let frameContext: FrameAnnotationContext | null = null;
-		if (type === "dna" && settings.showFrameAnnotations && parsed.sequence.length >= 3) {
+		if (type === "dna" && currentFrameMode !== "none" && parsed.sequence.length >= 3) {
 			const frames = translateAllFrames(parsed.sequence);
 			const matches = matchProteinFeatures(frames, settings.featureLibrary);
-			const visibleFrameIds = annotatedFrameIds(matches);
+			const visibleFrameIds = visibleFramesForMode(currentFrameMode, matches);
 			frameContext = { frames, matches, visibleFrameIds };
 		}
 
@@ -505,7 +538,16 @@ export function renderNucleotideBlock(
 				currentDisplayMode = currentDisplayMode === "ribbons" ? "badges" : "ribbons";
 				render(residuesPerLine);
 			},
-			() => render(residuesPerLine)
+			() => render(residuesPerLine),
+			type === "dna"
+				? {
+					current: currentFrameMode,
+					onChange: (mode) => {
+						currentFrameMode = mode;
+						render(residuesPerLine);
+					},
+				}
+				: null
 		);
 
 		renderLegend(container, currentSchemeId);
