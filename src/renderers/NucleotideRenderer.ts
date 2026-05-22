@@ -31,6 +31,12 @@ import {
 	measureResiduesPerLine,
 } from "./reflowManager";
 import { applySearchHighlight } from "./searchHighlight";
+import { translateAllFrames } from "../calculations/translation";
+import { matchProteinFeatures, annotatedFrameIds } from "../features/proteinFeatureMatcher";
+import {
+	renderFrameAnnotations,
+	FrameAnnotationContext,
+} from "./FrameAnnotationRenderer";
 
 const VALID_DNA = new Set("ATGC".split(""));
 const VALID_RNA = new Set("AUGC".split(""));
@@ -255,7 +261,8 @@ function renderColoredSequence(
 	residuesPerLine: number,
 	allSegments: AnnotatedSegment[],
 	displayMode: AnnotationDisplayMode,
-	selectRange: (start: number, end: number) => void
+	selectRange: (start: number, end: number) => void,
+	frameContext: FrameAnnotationContext | null
 ): void {
 	const invalidSet = new Set(invalidPositions);
 	const lineCount = Math.ceil(sequence.length / residuesPerLine);
@@ -332,6 +339,18 @@ function renderColoredSequence(
 				settings.showPositionNumbers,
 				settings.sequenceFontSize,
 				selectRange
+			);
+		}
+
+		// Render protein-feature frame rows for this line (DNA only, gated).
+		if (frameContext && frameContext.visibleFrameIds.size > 0) {
+			renderFrameAnnotations(
+				lineWrapper,
+				lineDiv,
+				start,
+				end,
+				frameContext,
+				settings
 			);
 		}
 	}
@@ -447,6 +466,15 @@ export function renderNucleotideBlock(
 		const featureMatches = matchFeatures(parsed.sequence, settings.featureLibrary, type);
 		const allSegments = mergeSegments(parsed.segments, featureMatches);
 
+		// Compute frame-annotation context (DNA only, gated by setting).
+		let frameContext: FrameAnnotationContext | null = null;
+		if (type === "dna" && settings.showFrameAnnotations && parsed.sequence.length >= 3) {
+			const frames = translateAllFrames(parsed.sequence);
+			const matches = matchProteinFeatures(frames, settings.featureLibrary);
+			const visibleFrameIds = annotatedFrameIds(matches);
+			frameContext = { frames, matches, visibleFrameIds };
+		}
+
 		// Clean up previous handlers
 		if (selectionCleanup) {
 			selectionCleanup();
@@ -533,7 +561,8 @@ export function renderNucleotideBlock(
 			residuesPerLine,
 			allSegments,
 			currentDisplayMode,
-			selection.selectRange
+			selection.selectRange,
+			frameContext
 		);
 
 		// Attach search handlers after sequence is rendered
