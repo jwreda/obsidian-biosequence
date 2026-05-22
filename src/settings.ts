@@ -180,6 +180,18 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Show 6-frame translate block (DNA)")
+			.setDesc("Below each DNA block, render all 6 reading frames and highlight matches against protein features in your library.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showTranslateBlock)
+					.onChange(async (value) => {
+						this.plugin.settings.showTranslateBlock = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Font size")
 			.setDesc("Sequence display font size in pixels (default: 14)")
 			.addText((text) =>
@@ -572,6 +584,14 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		row.createSpan({
 			cls: "biosequence-feature-type",
 			text: feature.type.toUpperCase(),
+		});
+
+		// Copy button
+		const copyBtn = row.createEl("button", { cls: "biosequence-feature-btn", text: "Copy" });
+		copyBtn.addEventListener("click", async () => {
+			await navigator.clipboard.writeText(feature.sequence);
+			copyBtn.textContent = "Copied!";
+			setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
 		});
 
 		// Edit button
