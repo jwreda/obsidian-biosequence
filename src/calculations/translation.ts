@@ -80,3 +80,40 @@ export function translateForwardFrame(
 	}
 	return { protein: protein.join(""), codonStartsForward: codonStarts };
 }
+
+/**
+ * Produce all 6 reading frames.
+ *
+ * Forward frames (+1/+2/+3): translated directly from `sequence`.
+ *   codonStartsForward[i] is the 0-based nt index on the forward strand.
+ *
+ * Reverse frames (-1/-2/-3): translated from reverseComplement(sequence).
+ *   We compute the protein from the reverse-complement string, then map each
+ *   aa back to its codon's position on the FORWARD strand.
+ *
+ *   Let L = sequence.length, and let i be the aa index in the reverse frame's
+ *   protein. The codon was taken from rc[offset + 3i : offset + 3i + 3] where
+ *   rc = reverseComplement(sequence) and offset = frame - 1. That codon
+ *   corresponds to forward-strand positions [L - (offset + 3i + 3), L - (offset + 3i)).
+ *   So codonStartsForward[i] = L - offset - 3i - 3.
+ */
+export function translateAllFrames(sequence: string): Frame[] {
+	const upper = sequence.toUpperCase();
+	const L = upper.length;
+	const frames: Frame[] = [];
+
+	for (const f of [1, 2, 3] as const) {
+		const { protein, codonStartsForward } = translateForwardFrame(upper, f);
+		frames.push({ id: `+${f}` as FrameId, protein, codonStartsForward });
+	}
+
+	const rc = reverseComplement(upper);
+	for (const f of [1, 2, 3] as const) {
+		const { protein, codonStartsForward: rcStarts } = translateForwardFrame(rc, f);
+		const offset = f - 1;
+		const forwardStarts = rcStarts.map((_, i) => L - offset - 3 * i - 3);
+		frames.push({ id: `-${f}` as FrameId, protein, codonStartsForward: forwardStarts });
+	}
+
+	return frames;
+}
