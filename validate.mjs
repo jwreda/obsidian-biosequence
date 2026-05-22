@@ -546,6 +546,23 @@ function annotatedFrameIds(matches) {
 	return set;
 }
 
+const FORWARD_FRAMES = ["+1", "+2", "+3"];
+const REVERSE_FRAMES = ["-1", "-2", "-3"];
+
+function visibleFramesForMode(mode, matches) {
+	if (mode === "none") return new Set();
+	if (mode === "all") return annotatedFrameIds(matches);
+	if (mode === "forward") {
+		const annotated = annotatedFrameIds(matches);
+		return new Set(FORWARD_FRAMES.filter((id) => annotated.has(id)));
+	}
+	if (mode === "reverse") {
+		const annotated = annotatedFrameIds(matches);
+		return new Set(REVERSE_FRAMES.filter((id) => annotated.has(id)));
+	}
+	return new Set([mode]);
+}
+
 function testMatcherForward() {
 	const dna = "ATGAAACGTTAA"; // +1 = MKR*
 	const features = [{ id: "f1", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true }];
@@ -619,6 +636,64 @@ function testAnnotatedFrameIdsNoMatches() {
 	return ok;
 }
 
+function testVisibleFramesNone() {
+	const dna = "ATGAAACGTTAA";
+	const features = [{ id: "a", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true }];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const v = visibleFramesForMode("none", ms);
+	const ok = v.size === 0;
+	console.log(`visibleFramesForMode none: ${ok ? "pass" : "FAIL"}`, Array.from(v));
+	return ok;
+}
+
+function testVisibleFramesAll() {
+	const dna = "ATGAAACGTTAA";
+	const features = [
+		{ id: "a", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true },
+		{ id: "b", name: "LT", sequence: "LT", type: "aa", color: "#fff", enabled: true },
+	];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const v = visibleFramesForMode("all", ms);
+	const ok = v.size === 2 && v.has("+1") && v.has("-1");
+	console.log(`visibleFramesForMode all: ${ok ? "pass" : "FAIL"}`, Array.from(v));
+	return ok;
+}
+
+function testVisibleFramesForward() {
+	const dna = "ATGAAACGTTAA";
+	const features = [
+		{ id: "a", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true },
+		{ id: "b", name: "LT", sequence: "LT", type: "aa", color: "#fff", enabled: true },
+	];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const v = visibleFramesForMode("forward", ms);
+	const ok = v.size === 1 && v.has("+1");
+	console.log(`visibleFramesForMode forward: ${ok ? "pass" : "FAIL"}`, Array.from(v));
+	return ok;
+}
+
+function testVisibleFramesReverse() {
+	const dna = "ATGAAACGTTAA";
+	const features = [
+		{ id: "a", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true },
+		{ id: "b", name: "LT", sequence: "LT", type: "aa", color: "#fff", enabled: true },
+	];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const v = visibleFramesForMode("reverse", ms);
+	const ok = v.size === 1 && v.has("-1");
+	console.log(`visibleFramesForMode reverse: ${ok ? "pass" : "FAIL"}`, Array.from(v));
+	return ok;
+}
+
+function testVisibleFramesSpecificNoMatches() {
+	// Specific-frame mode must render the chosen frame even with zero matches.
+	const ms = []; // empty matches
+	const v = visibleFramesForMode("+2", ms);
+	const ok = v.size === 1 && v.has("+2");
+	console.log(`visibleFramesForMode +2 (no matches): ${ok ? "pass" : "FAIL"}`, Array.from(v));
+	return ok;
+}
+
 // Summary
 console.log("═══════════════════════════════════════════════════════════════");
 console.log(`  RESULTS: ${passes}/${total} tests passed`);
@@ -636,6 +711,11 @@ const trResults = [
 	testAmbiguousBases(),
 	testAnnotatedFrameIdsSomeMatches(),
 	testAnnotatedFrameIdsNoMatches(),
+	testVisibleFramesNone(),
+	testVisibleFramesAll(),
+	testVisibleFramesForward(),
+	testVisibleFramesReverse(),
+	testVisibleFramesSpecificNoMatches(),
 ];
 const trPass = trResults.filter(Boolean).length;
 const trTotal = trResults.length;

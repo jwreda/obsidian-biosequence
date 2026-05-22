@@ -87,3 +87,42 @@ export function annotatedFrameIds(matches: ProteinMatch[]): Set<FrameId> {
 	for (const m of matches) set.add(m.frame);
 	return set;
 }
+
+/** Display mode for inline frame annotations. */
+export type FrameAnnotationMode =
+	| "none"
+	| "all"
+	| "forward"
+	| "reverse"
+	| FrameId;
+
+const FORWARD_FRAMES: FrameId[] = ["+1", "+2", "+3"];
+const REVERSE_FRAMES: FrameId[] = ["-1", "-2", "-3"];
+
+/**
+ * Resolve which frame IDs should render under a given display mode.
+ *
+ *  - "none": always empty.
+ *  - "all": every frame in {+1..-3} that has at least one match.
+ *  - "forward": forward frames that have at least one match.
+ *  - "reverse": reverse frames that have at least one match.
+ *  - Specific FrameId: that single frame, regardless of match presence
+ *    (ORF-inspection mode).
+ */
+export function visibleFramesForMode(
+	mode: FrameAnnotationMode,
+	matches: ProteinMatch[]
+): Set<FrameId> {
+	if (mode === "none") return new Set();
+	if (mode === "all") return annotatedFrameIds(matches);
+	if (mode === "forward") {
+		const annotated = annotatedFrameIds(matches);
+		return new Set(FORWARD_FRAMES.filter((id) => annotated.has(id)));
+	}
+	if (mode === "reverse") {
+		const annotated = annotatedFrameIds(matches);
+		return new Set(REVERSE_FRAMES.filter((id) => annotated.has(id)));
+	}
+	// Specific frame: always rendered, no match filter.
+	return new Set([mode]);
+}
