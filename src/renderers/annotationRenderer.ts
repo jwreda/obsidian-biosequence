@@ -30,7 +30,7 @@ function assignLanes(segments: AnnotatedSegment[]): AnnotatedSegment[][] {
 	return lanes;
 }
 
-function highlightResidues(containerDiv: HTMLElement, start: number, end: number, color: string): void {
+export function highlightResidues(containerDiv: HTMLElement, start: number, end: number, color: string): void {
 	const residues = containerDiv.querySelectorAll<HTMLElement>(".biosequence-residue[data-pos]");
 	for (const res of Array.from(residues)) {
 		const pos = parseInt(res.dataset["pos"] ?? "-1", 10);
@@ -41,7 +41,7 @@ function highlightResidues(containerDiv: HTMLElement, start: number, end: number
 	}
 }
 
-function clearHighlights(containerDiv: HTMLElement): void {
+export function clearHighlights(containerDiv: HTMLElement): void {
 	const residues = containerDiv.querySelectorAll<HTMLElement>(".biosequence-residue.segment-highlight");
 	for (const res of Array.from(residues)) {
 		res.classList.remove("segment-highlight");
