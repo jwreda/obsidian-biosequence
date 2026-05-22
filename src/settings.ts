@@ -180,13 +180,13 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Show 6-frame translate block (DNA)")
-			.setDesc("Below each DNA block, render all 6 reading frames and highlight matches against protein features in your library.")
+			.setName("Show 6-frame annotations on DNA blocks")
+			.setDesc("Interleave per-frame protein rows directly beneath each wrapped DNA line. Only frames containing at least one matched protein feature are shown.")
 			.addToggle((toggle) =>
 				toggle
-					.setValue(this.plugin.settings.showTranslateBlock)
+					.setValue(this.plugin.settings.showFrameAnnotations)
 					.onChange(async (value) => {
-						this.plugin.settings.showTranslateBlock = value;
+						this.plugin.settings.showFrameAnnotations = value;
 						await this.plugin.saveSettings();
 					})
 			);
