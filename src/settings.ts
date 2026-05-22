@@ -586,14 +586,6 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			text: feature.type.toUpperCase(),
 		});
 
-		// Copy button
-		const copyBtn = row.createEl("button", { cls: "biosequence-feature-btn", text: "Copy" });
-		copyBtn.addEventListener("click", async () => {
-			await navigator.clipboard.writeText(feature.sequence);
-			copyBtn.textContent = "Copied!";
-			setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
-		});
-
 		// Edit button
 		const editBtn = row.createEl("button", { cls: "biosequence-feature-btn", text: "Edit" });
 		editBtn.addEventListener("click", () => {
