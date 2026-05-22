@@ -124,6 +124,7 @@ export interface BiosequenceSettings {
 	featureLibrary: FeatureEntry[];
 	annotationDisplayMode: AnnotationDisplayMode;
 	searchHighlightColor: string;
+	showTranslateBlock: boolean;
 }
 
 /** Amino acid composition result */
@@ -198,4 +199,5 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	featureLibrary: [],
 	annotationDisplayMode: "ribbons" as AnnotationDisplayMode,
 	searchHighlightColor: "#FF6D00",
+	showTranslateBlock: true,
 };
