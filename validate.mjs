@@ -540,6 +540,12 @@ function matchProteinFeatures(frames, features) {
 	return out;
 }
 
+function annotatedFrameIds(matches) {
+	const set = new Set();
+	for (const m of matches) set.add(m.frame);
+	return set;
+}
+
 function testMatcherForward() {
 	const dna = "ATGAAACGTTAA"; // +1 = MKR*
 	const features = [{ id: "f1", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true }];
@@ -585,6 +591,34 @@ function testAmbiguousBases() {
 	return ok;
 }
 
+function testAnnotatedFrameIdsSomeMatches() {
+	// ATGAAACGTTAA: +1 has MKR*; rc TTAACGTTTCAT → -1 has LTFH.
+	// "MK" matches +1; "LT" matches -1; "ZZ" matches neither.
+	const dna = "ATGAAACGTTAA";
+	const features = [
+		{ id: "a", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true },
+		{ id: "b", name: "LT", sequence: "LT", type: "aa", color: "#fff", enabled: true },
+		{ id: "c", name: "ZZ", sequence: "ZZ", type: "aa", color: "#fff", enabled: true },
+	];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const visible = annotatedFrameIds(ms);
+	const ok = visible.size === 2 && visible.has("+1") && visible.has("-1");
+	console.log(`annotatedFrameIds picks only matched frames: ${ok ? "pass" : "FAIL"}`, Array.from(visible));
+	return ok;
+}
+
+function testAnnotatedFrameIdsNoMatches() {
+	const dna = "ATGAAACGTTAA";
+	const features = [
+		{ id: "z", name: "ZZ", sequence: "ZZ", type: "aa", color: "#fff", enabled: true },
+	];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const visible = annotatedFrameIds(ms);
+	const ok = visible.size === 0;
+	console.log(`annotatedFrameIds empty when no matches: ${ok ? "pass" : "FAIL"}`, Array.from(visible));
+	return ok;
+}
+
 // Summary
 console.log("═══════════════════════════════════════════════════════════════");
 console.log(`  RESULTS: ${passes}/${total} tests passed`);
@@ -600,6 +634,8 @@ const trResults = [
 	testMatcherReverse(),
 	testMatcherDisabledAndWrongType(),
 	testAmbiguousBases(),
+	testAnnotatedFrameIdsSomeMatches(),
+	testAnnotatedFrameIdsNoMatches(),
 ];
 const trPass = trResults.filter(Boolean).length;
 const trTotal = trResults.length;
