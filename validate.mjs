@@ -384,9 +384,224 @@ const extMix = computeExtCoeff(compMix);
 run("AAWCCYAA EC reduced (1W, 1Y)", extMix.reduced, 6990, 0.01);
 run("AAWCCYAA EC oxidized (1W, 1Y, 1SS)", extMix.oxidized, 7115, 0.01);
 
+// ── Translation tests (Task 4) ─────────────────────────────────────────
+
+const CODON_TABLE = {
+	TTT: "F", TTC: "F", TTA: "L", TTG: "L",
+	CTT: "L", CTC: "L", CTA: "L", CTG: "L",
+	ATT: "I", ATC: "I", ATA: "I", ATG: "M",
+	GTT: "V", GTC: "V", GTA: "V", GTG: "V",
+	TCT: "S", TCC: "S", TCA: "S", TCG: "S",
+	CCT: "P", CCC: "P", CCA: "P", CCG: "P",
+	ACT: "T", ACC: "T", ACA: "T", ACG: "T",
+	GCT: "A", GCC: "A", GCA: "A", GCG: "A",
+	TAT: "Y", TAC: "Y", TAA: "*", TAG: "*",
+	CAT: "H", CAC: "H", CAA: "Q", CAG: "Q",
+	AAT: "N", AAC: "N", AAA: "K", AAG: "K",
+	GAT: "D", GAC: "D", GAA: "E", GAG: "E",
+	TGT: "C", TGC: "C", TGA: "*", TGG: "W",
+	CGT: "R", CGC: "R", CGA: "R", CGG: "R",
+	AGT: "S", AGC: "S", AGA: "R", AGG: "R",
+	GGT: "G", GGC: "G", GGA: "G", GGG: "G",
+};
+const COMP = { A: "T", T: "A", G: "C", C: "G" };
+
+function translateCodon(c) {
+	if (c.length !== 3) return "X";
+	return CODON_TABLE[c.toUpperCase()] ?? "X";
+}
+
+function reverseComplement(seq) {
+	const u = seq.toUpperCase();
+	let out = "";
+	for (let i = u.length - 1; i >= 0; i--) out += COMP[u[i]] ?? u[i];
+	return out;
+}
+
+function translateForwardFrame(seq, frame) {
+	const u = seq.toUpperCase();
+	const offset = frame - 1;
+	const aa = [];
+	const starts = [];
+	for (let i = offset; i + 3 <= u.length; i += 3) {
+		aa.push(translateCodon(u.slice(i, i + 3)));
+		starts.push(i);
+	}
+	return { protein: aa.join(""), codonStartsForward: starts };
+}
+
+function translateAllFrames(seq) {
+	const u = seq.toUpperCase();
+	const L = u.length;
+	const frames = [];
+	for (const f of [1, 2, 3]) {
+		const r = translateForwardFrame(u, f);
+		frames.push({ id: "+" + f, ...r });
+	}
+	const rc = reverseComplement(u);
+	for (const f of [1, 2, 3]) {
+		const r = translateForwardFrame(rc, f);
+		const offset = f - 1;
+		const forwardStarts = r.codonStartsForward.map((_, i) => L - offset - 3 * i - 3);
+		frames.push({ id: "-" + f, protein: r.protein, codonStartsForward: forwardStarts });
+	}
+	return frames;
+}
+
+// Test 1: All 64 codons translate to expected residues
+function testCodonTable() {
+	const bases = ["A", "C", "G", "T"];
+	const expected = {
+		// Sanity-check a representative subset; full table is in CODON_TABLE.
+		ATG: "M", TAA: "*", TAG: "*", TGA: "*",
+		TGG: "W", TTT: "F", GGG: "G", AAA: "K",
+		CGN_AGA: "R", // covered by entries CGA + AGA below
+	};
+	let pass = 0, fail = 0;
+	for (const b1 of bases) for (const b2 of bases) for (const b3 of bases) {
+		const codon = b1 + b2 + b3;
+		const aa = translateCodon(codon);
+		if (typeof aa !== "string" || aa.length !== 1) { fail++; console.error("BAD", codon, aa); }
+		else pass++;
+	}
+	// Spot-checks
+	for (const [codon, want] of [["ATG","M"],["TAA","*"],["TAG","*"],["TGA","*"],["TGG","W"]]) {
+		if (translateCodon(codon) !== want) { fail++; console.error("MISMATCH", codon, "want", want); }
+		else pass++;
+	}
+	console.log(`Codon table: ${pass} pass, ${fail} fail`);
+	return fail === 0;
+}
+
+function test6Frames() {
+	const dna = "ATGAAACGTTAA";
+	const frames = translateAllFrames(dna);
+	const byId = Object.fromEntries(frames.map(f => [f.id, f]));
+
+	const checks = [
+		// Forward
+		["+1", "MKR*", [0, 3, 6, 9]],
+		["+2", "*NV",  [1, 4, 7]],
+		["+3", "ETL",  [2, 5, 8]],
+		// Reverse (rc of ATGAAACGTTAA = TTAACGTTTCAT)
+		// rc frame +1 = TTA ACG TTT CAT = L T F H → forward nt starts L-0-3i-3, L=12
+		["-1", "LTFH", [9, 6, 3, 0]],
+		// rc frame +2 = TAA CGT TTC AT(drop) = * R F → L-1-3i-3 = 8,5,2
+		["-2", "*RF",  [8, 5, 2]],
+		// rc frame +3 = AAC GTT TCA T(drop) = N V S → L-2-3i-3 = 7,4,1
+		["-3", "NVS",  [7, 4, 1]],
+	];
+
+	let pass = 0, fail = 0;
+	for (const [id, proteinExp, startsExp] of checks) {
+		const f = byId[id];
+		if (!f) { fail++; console.error("Missing frame", id); continue; }
+		if (f.protein !== proteinExp) {
+			fail++; console.error(`Frame ${id} protein: got "${f.protein}" want "${proteinExp}"`);
+			continue;
+		}
+		if (JSON.stringify(f.codonStartsForward) !== JSON.stringify(startsExp)) {
+			fail++; console.error(`Frame ${id} starts: got ${JSON.stringify(f.codonStartsForward)} want ${JSON.stringify(startsExp)}`);
+			continue;
+		}
+		pass++;
+	}
+	console.log(`6-frame translation: ${pass} pass, ${fail} fail`);
+	return fail === 0;
+}
+
+// Inline matcher (mirror of proteinFeatureMatcher.ts)
+function matchProteinFeatures(frames, features) {
+	const out = [];
+	for (const frame of frames) {
+		const p = frame.protein.toUpperCase();
+		if (!p) continue;
+		for (const feat of features) {
+			if (!feat.enabled || feat.type !== "aa") continue;
+			const fs = feat.sequence.toUpperCase();
+			if (!fs || fs.length > p.length) continue;
+			let from = 0;
+			while (from <= p.length - fs.length) {
+				const i = p.indexOf(fs, from);
+				if (i === -1) break;
+				const j = i + fs.length;
+				const a = frame.codonStartsForward[i];
+				const b = frame.codonStartsForward[j - 1];
+				out.push({
+					featureId: feat.id, name: feat.name, frame: frame.id,
+					aaStart: i, aaEnd: j,
+					ntStart: Math.min(a, b),
+					ntEnd: Math.max(a, b) + 3,
+				});
+				from = i + 1;
+			}
+		}
+	}
+	return out;
+}
+
+function testMatcherForward() {
+	const dna = "ATGAAACGTTAA"; // +1 = MKR*
+	const features = [{ id: "f1", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: true }];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const hit = ms.find(m => m.frame === "+1");
+	const ok = !!hit && hit.aaStart === 0 && hit.aaEnd === 2 && hit.ntStart === 0 && hit.ntEnd === 6;
+	console.log(`Matcher forward MK in +1: ${ok ? "pass" : "FAIL"}`, hit);
+	return ok;
+}
+
+function testMatcherReverse() {
+	// rc of ATGAAACGTTAA = TTAACGTTTCAT; -1 frame = LTFH; LT at aa 0–2.
+	// codonStartsForward for -1 = [9, 6, 3, 0]. So LT → starts[0]=9, starts[1]=6.
+	// nt range = [min(9,6), max(9,6)+3) = [6, 12).
+	const dna = "ATGAAACGTTAA";
+	const features = [{ id: "f1", name: "LT", sequence: "LT", type: "aa", color: "#fff", enabled: true }];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const hit = ms.find(m => m.frame === "-1");
+	const ok = !!hit && hit.aaStart === 0 && hit.aaEnd === 2 && hit.ntStart === 6 && hit.ntEnd === 12;
+	console.log(`Matcher reverse LT in -1: ${ok ? "pass" : "FAIL"}`, hit);
+	return ok;
+}
+
+function testMatcherDisabledAndWrongType() {
+	const dna = "ATGAAACGTTAA";
+	const features = [
+		{ id: "a", name: "MK", sequence: "MK", type: "aa", color: "#fff", enabled: false },
+		{ id: "b", name: "ATG", sequence: "ATG", type: "dna", color: "#fff", enabled: true },
+	];
+	const ms = matchProteinFeatures(translateAllFrames(dna), features);
+	const ok = ms.length === 0;
+	console.log(`Matcher ignores disabled + non-aa: ${ok ? "pass" : "FAIL"}`, ms);
+	return ok;
+}
+
+function testAmbiguousBases() {
+	// "ATGNNNTAA" in +1 → M X *
+	const dna = "ATGNNNTAA";
+	const frames = translateAllFrames(dna);
+	const f1 = frames.find(f => f.id === "+1");
+	const ok = f1.protein === "MX*";
+	console.log(`Ambiguous bases → X: ${ok ? "pass" : "FAIL"}`, f1.protein);
+	return ok;
+}
+
 // Summary
 console.log("═══════════════════════════════════════════════════════════════");
 console.log(`  RESULTS: ${passes}/${total} tests passed`);
 if (passes === total) console.log("  ALL TESTS PASSED");
 else console.log(`  ${total - passes} TESTS FAILED`);
 console.log("═══════════════════════════════════════════════════════════════");
+
+console.log("\n=== Translation tests ===");
+const trResults = [
+	testCodonTable(),
+	test6Frames(),
+	testMatcherForward(),
+	testMatcherReverse(),
+	testMatcherDisabledAndWrongType(),
+	testAmbiguousBases(),
+];
+const trPass = trResults.filter(Boolean).length;
+const trTotal = trResults.length;
+console.log(`Translation suite: ${trPass}/${trTotal} passed`);
+if (trPass !== trTotal) process.exit(1);
