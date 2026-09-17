@@ -720,4 +720,12 @@ const trResults = [
 const trPass = trResults.filter(Boolean).length;
 const trTotal = trResults.length;
 console.log(`Translation suite: ${trPass}/${trTotal} passed`);
-if (trPass !== trTotal) process.exit(1);
+
+// Exit non-zero if EITHER suite has a failure.
+const allPassed = passes === total && trPass === trTotal;
+if (!allPassed) {
+	console.error(
+		`FAIL: properties ${passes}/${total}, translation ${trPass}/${trTotal}`
+	);
+	process.exit(1);
+}

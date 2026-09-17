@@ -2,8 +2,6 @@
 
 Biological sequence viewer for Obsidian — render amino acid, DNA, and RNA sequences with per-residue coloring, biophysical property calculations, and pairwise alignment.
 
-<!-- TODO: Add screenshot of amino acid sequence with summary panel -->
-
 ## Features
 
 ### Core Sequence Rendering
@@ -111,7 +109,7 @@ A persistent library of named sequence motifs that auto-highlight on rendered se
 - **Click and drag** to select residue ranges
 - **Selection bar** shows selected range and subsequence
 - **Copy selection** button for extracting subsequences
-- Fully keyboard-accessible
+- Press Cmd/Ctrl+C to copy the current selection
 
 ### Sequence Alignment (Desktop Only)
 
@@ -174,9 +172,9 @@ AUGGUGCUGUCUCCCUGCCGACAAGACCAACGUCAAGGCCGCCUGGGGUAAG
 4. Restart Obsidian
 5. Enable BioSequence in Settings → Community Plugins
 
-### Community Plugins (Coming Soon)
+### Community plugin directory
 
-BioSequence will be available in the Obsidian Community Plugins browser after initial release.
+BioSequence is not in the Obsidian community plugin directory yet. Until it is, use BRAT or manual installation above.
 
 ## Configuration
 
@@ -193,7 +191,7 @@ All settings are configurable via Settings → BioSequence:
 | Annotation display mode | Ribbons or badges | Ribbons |
 | Assume disulfide bonds | For extinction coefficient calculation | Disabled |
 | MAFFT binary path | Path to MAFFT executable | `mafft` |
-| Alignment output directory | Where to save alignment notes | `Plasmid design/alignments` |
+| Alignment output directory | Where to save alignment notes | `BioSequence/alignments` |
 | Conservation symbols | Customize alignment symbols | `|`, `:`, `.`, `X`, `-` |
 | Feature Library | Manage auto-matching motifs | Empty |
 

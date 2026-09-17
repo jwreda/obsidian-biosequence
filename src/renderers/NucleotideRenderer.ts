@@ -337,17 +337,17 @@ function renderColoredSequence(
 			});
 			span.dataset["pos"] = String(i);
 
-			if (bgColor === "") {
+			if (invalidSet.has(i)) {
+				// Invalid residues are styled entirely from CSS (theme
+				// variables); skip inline colors so no !important is needed.
+				span.addClass("invalid");
+			} else if (bgColor === "") {
 				span.classList.add("biosequence-residue-neutral");
 			} else {
 				const textColor =
 					scheme.textColors?.[ch] ?? autoContrast(bgColor);
 				span.style.backgroundColor = bgColor;
 				span.style.color = textColor;
-			}
-
-			if (invalidSet.has(i)) {
-				span.addClass("invalid");
 			}
 		}
 

@@ -17,3 +17,6 @@ data.json
 # Claude Code agent files (local only)
 CLAUDE.md
 .claude/
+
+# Internal planning/spec docs (kept locally, not published)
+docs/superpowers/

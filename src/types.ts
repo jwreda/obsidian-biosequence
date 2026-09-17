@@ -191,7 +191,7 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 	summaryExpanded: false,
 	assumeDisulfideBonds: false,
 	mafftPath: "mafft",
-	alignmentOutputDir: "Plasmid design/alignments",
+	alignmentOutputDir: "BioSequence/alignments",
 	conservationSymbols: {
 		identity: "|",
 		similar: ":",

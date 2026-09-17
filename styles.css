@@ -194,9 +194,9 @@
 
 /* Invalid residue override */
 .biosequence-residue.invalid {
-	background-color: #1A1A1A !important;
-	color: #fff !important;
-	text-decoration: underline wavy #ff4444;
+	background-color: var(--background-modifier-error);
+	color: var(--text-on-accent);
+	text-decoration: underline wavy var(--text-error);
 }
 
 /* Error message */

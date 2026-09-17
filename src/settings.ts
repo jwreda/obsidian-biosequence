@@ -275,9 +275,9 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setValue(this.plugin.settings.alignmentOutputDir)
-					.setPlaceholder("Plasmid design/alignments")
+					.setPlaceholder("BioSequence/alignments")
 					.onChange(async (value) => {
-						this.plugin.settings.alignmentOutputDir = value || "Plasmid design/alignments";
+						this.plugin.settings.alignmentOutputDir = value || "BioSequence/alignments";
 						await this.plugin.saveSettings();
 					})
 			);
