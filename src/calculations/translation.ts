@@ -40,16 +40,21 @@ export const CODON_TABLE: Record<string, string> = {
 	GGT: "G", GGC: "G", GGA: "G", GGG: "G",
 };
 
-const COMPLEMENT: Record<string, string> = { A: "T", T: "A", G: "C", C: "G" };
+// IUPAC complements; U is treated as T so RNA input yields a DNA complement
+const COMPLEMENT: Record<string, string> = {
+	A: "T", T: "A", U: "A", G: "C", C: "G",
+	R: "Y", Y: "R", K: "M", M: "K", S: "S", W: "W",
+	B: "V", V: "B", D: "H", H: "D", N: "N",
+};
 
-/** Translate a single codon. Returns "X" if codon contains any non-ACGT base. */
+/** Translate a single codon (DNA or RNA). Returns "X" if codon contains any non-ACGT/U base. */
 export function translateCodon(codon: string): string {
 	if (codon.length !== 3) return "X";
-	const upper = codon.toUpperCase();
+	const upper = codon.toUpperCase().replace(/U/g, "T");
 	return CODON_TABLE[upper] ?? "X";
 }
 
-/** Reverse-complement a DNA string. Non-ACGT bases pass through unchanged. */
+/** Reverse-complement a DNA or RNA string as DNA (IUPAC-aware). Unknown characters pass through unchanged. */
 export function reverseComplement(seq: string): string {
 	const upper = seq.toUpperCase();
 	const out: string[] = [];

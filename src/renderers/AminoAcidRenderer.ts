@@ -433,7 +433,7 @@ export function renderAminoAcidBlock(
 	source: string,
 	el: HTMLElement,
 	settings: BiosequenceSettings
-): void {
+): () => void {
 	const container = el.createDiv({ cls: "biosequence-block biosequence-aa" });
 	const parsed = parseAASequence(source);
 
@@ -442,7 +442,7 @@ export function renderAminoAcidBlock(
 			text: "No valid amino acid sequence found",
 			cls: "biosequence-error",
 		});
-		return;
+		return () => {};
 	}
 
 	let currentSchemeId = settings.defaultAAScheme;
@@ -613,7 +613,7 @@ export function renderAminoAcidBlock(
 	}
 
 	// Attach reflow observer
-	createReflowObserver(
+	const observer = createReflowObserver(
 		container,
 		settings.showPositionNumbers,
 		settings.sequenceFontSize,
@@ -622,4 +622,12 @@ export function renderAminoAcidBlock(
 			render(newResiduesPerLine);
 		}
 	);
+
+	return () => {
+		observer.disconnect();
+		if (selectionCleanup) {
+			selectionCleanup();
+			selectionCleanup = null;
+		}
+	};
 }

@@ -77,6 +77,16 @@ export function createReflowObserver(
 	});
 
 	observer.observe(container);
+
+	// Clear any pending reflow so it can't fire on a detached block
+	const disconnect = observer.disconnect.bind(observer);
+	observer.disconnect = () => {
+		if (debounceTimer !== null) {
+			clearTimeout(debounceTimer);
+			debounceTimer = null;
+		}
+		disconnect();
+	};
 	return observer;
 }
 
