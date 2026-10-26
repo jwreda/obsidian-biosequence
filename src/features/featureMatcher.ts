@@ -4,8 +4,8 @@ import { AnnotatedSegment, FeatureEntry, FeatureMatch, Segment, SequenceType } f
 /**
  * Find all occurrences of enabled library features in the given sequence.
  * Finds all substring matches including overlapping positions. Nucleotide
- * features are matched on both strands, and DNA and RNA features match
- * either sequence type (T and U are treated as equivalent).
+ * features match either DNA or RNA blocks (T and U are treated as
+ * equivalent), and DNA blocks are also searched on the reverse strand.
  */
 export function matchFeatures(
 	sequence: string,
@@ -47,14 +47,31 @@ export function matchFeatures(
 		const forward = findAll(upperSeq, featureSeq);
 		for (const idx of forward) push(idx, "+");
 
-		// Skip the reverse search for palindromes: those hits are the same sites
-		const rc = reverseComplement(featureSeq);
-		if (rc !== featureSeq) {
-			for (const idx of findAll(upperSeq, rc)) push(idx, "-");
+		// RNA is single-stranded, so only DNA has a reverse strand to search.
+		// Skip palindromes too: their reverse hits are the same sites.
+		if (sequenceType === "dna") {
+			const rc = reverseComplement(featureSeq);
+			if (rc !== featureSeq) {
+				for (const idx of findAll(upperSeq, rc)) push(idx, "-");
+			}
 		}
 	}
 
-	return matches;
+	return dedupeMatches(matches);
+}
+
+/**
+ * Drop repeat hits for the same named feature at the same span and strand,
+ * e.g. when a library holds both DNA and RNA versions of one feature.
+ */
+function dedupeMatches(matches: FeatureMatch[]): FeatureMatch[] {
+	const seen = new Set<string>();
+	return matches.filter((m) => {
+		const key = `${m.name}\u0000${m.start}\u0000${m.end}\u0000${m.strand ?? ""}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
 }
 
 /** All (overlapping) start positions of needle in haystack. */
