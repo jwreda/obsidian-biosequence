@@ -100,12 +100,15 @@ export interface FeatureMatch {
 	end: number;
 	color: string;
 	source: "library";
+	/** Strand the feature was found on (nucleotide features only) */
+	strand?: "+" | "-";
 }
 
 /** Extended Segment with source tracking */
 export interface AnnotatedSegment extends Segment {
 	source: "inline" | "range" | "library";
 	featureId?: string;
+	strand?: "+" | "-";
 }
 
 /** Display mode for sequence annotations */

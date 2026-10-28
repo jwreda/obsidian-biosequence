@@ -391,7 +391,7 @@ export function renderAlignmentBlock(
 	source: string,
 	el: HTMLElement,
 	settings: BiosequenceSettings
-): void {
+): () => void {
 	const container = el.createDiv({
 		cls: "biosequence-block biosequence-alignment",
 	});
@@ -403,7 +403,7 @@ export function renderAlignmentBlock(
 			text: "Alignment requires at least 2 sequences in FASTA format",
 			cls: "biosequence-error",
 		});
-		return;
+		return () => {};
 	}
 
 	const seq1 = entries[0]!.sequence;
@@ -416,7 +416,7 @@ export function renderAlignmentBlock(
 			text: "No valid sequences found in alignment block",
 			cls: "biosequence-error",
 		});
-		return;
+		return () => {};
 	}
 
 	const detectedType = detectType(seq1, seq2);
@@ -549,7 +549,7 @@ export function renderAlignmentBlock(
 	render(initialResiduesPerLine);
 
 	// Attach reflow observer for dynamic resize
-	createReflowObserver(
+	const observer = createReflowObserver(
 		container,
 		settings.showPositionNumbers,
 		settings.sequenceFontSize,
@@ -559,4 +559,6 @@ export function renderAlignmentBlock(
 		},
 		labelOffsetPx
 	);
+
+	return () => observer.disconnect();
 }

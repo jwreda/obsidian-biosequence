@@ -472,7 +472,7 @@ export function renderNucleotideBlock(
 	el: HTMLElement,
 	type: SequenceType,
 	settings: BiosequenceSettings
-): void {
+): () => void {
 	const container = el.createDiv({
 		cls: `biosequence-block biosequence-${type}`,
 	});
@@ -483,7 +483,7 @@ export function renderNucleotideBlock(
 			text: `No valid ${type.toUpperCase()} sequence found`,
 			cls: "biosequence-error",
 		});
-		return;
+		return () => {};
 	}
 
 	const defaultScheme =
@@ -676,7 +676,7 @@ export function renderNucleotideBlock(
 	}
 
 	// Attach reflow observer
-	createReflowObserver(
+	const observer = createReflowObserver(
 		container,
 		settings.showPositionNumbers,
 		settings.sequenceFontSize,
@@ -685,4 +685,12 @@ export function renderNucleotideBlock(
 			render(newResiduesPerLine);
 		}
 	);
+
+	return () => {
+		observer.disconnect();
+		if (selectionCleanup) {
+			selectionCleanup();
+			selectionCleanup = null;
+		}
+	};
 }
