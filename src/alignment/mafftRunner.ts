@@ -1,7 +1,9 @@
-import { execFile } from "child_process";
-import { tmpdir } from "os";
-import { join } from "path";
-import { writeFileSync, unlinkSync } from "fs";
+// Node built-ins are loaded lazily inside runMafft so the plugin still loads
+// on mobile, where they don't exist. Only the types are imported here.
+import type * as ChildProcess from "child_process";
+import type * as Fs from "fs";
+import type * as Os from "os";
+import type * as Path from "path";
 
 /**
  * Run MAFFT pairwise alignment on two sequences.
@@ -23,6 +25,13 @@ export function runMafft(
 	header2: string,
 	mafftPath: string
 ): Promise<string> {
+	/* eslint-disable @typescript-eslint/no-var-requires */
+	const { execFile } = require("child_process") as typeof ChildProcess;
+	const { writeFileSync, unlinkSync } = require("fs") as typeof Fs;
+	const { tmpdir } = require("os") as typeof Os;
+	const { join, delimiter } = require("path") as typeof Path;
+	/* eslint-enable @typescript-eslint/no-var-requires */
+
 	const tmpFile = join(
 		tmpdir(),
 		`biosequence-mafft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.fasta`
@@ -38,13 +47,11 @@ export function runMafft(
 
 	writeFileSync(tmpFile, fastaContent, "utf-8");
 
-	const augmentedPath = [
-		"/opt/homebrew/bin",
-		"/usr/local/bin",
-		"/usr/bin",
-		"/bin",
-		process.env.PATH ?? "",
-	].join(":");
+	// GUI apps on macOS don't inherit the shell PATH, so add the usual install dirs
+	const extraDirs = process.platform === "win32"
+		? []
+		: ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"];
+	const augmentedPath = [...extraDirs, process.env.PATH ?? ""].join(delimiter);
 
 	return new Promise<string>((resolve, reject) => {
 		const child = execFile(
