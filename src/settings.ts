@@ -438,7 +438,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			cls: "biosequence-feature-search-clear",
 			title: "Clear filter",
 		});
-		clearBtn.style.visibility = this.featureFilter ? "visible" : "hidden";
+		clearBtn.toggleClass("biosequence-invisible", !this.featureFilter);
 
 		// Feature list
 		const listContainer = containerEl.createDiv({ cls: "biosequence-feature-list" });
@@ -459,12 +459,12 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		const filterRows = (): void => {
 			const term = searchInput.value.toLowerCase();
 			this.featureFilter = term;
-			clearBtn.style.visibility = term ? "visible" : "hidden";
+			clearBtn.toggleClass("biosequence-invisible", !term);
 			const rows = listContainer.querySelectorAll<HTMLElement>(".biosequence-feature-row");
 			for (const row of Array.from(rows)) {
 				const name = row.dataset["featureName"] ?? "";
 				const seq = row.dataset["featureSeq"] ?? "";
-				row.style.display = (name.includes(term) || seq.includes(term)) ? "" : "none";
+				row.toggleClass("biosequence-hidden", !(name.includes(term) || seq.includes(term)));
 			}
 		};
 
@@ -572,7 +572,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		const colorInput = row.createEl("input", { type: "color" }) as HTMLInputElement;
 		colorInput.value = feature.color;
-		colorInput.style.display = "none";
+		colorInput.addClass("biosequence-hidden");
 		colorInput.addEventListener("input", async () => {
 			feature.color = colorInput.value;
 			swatch.style.backgroundColor = colorInput.value;
