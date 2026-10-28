@@ -461,7 +461,7 @@ export function renderAlignmentBlock(
 		renderLegend(container, detectedType, currentSchemeId);
 
 		const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
-		seqDiv.style.fontSize = `${settings.sequenceFontSize}px`;
+		seqDiv.setCssProps({ "--biosequence-font-size": `${settings.sequenceFontSize}px` });
 
 		const lineCount = Math.ceil(alignmentLength / residuesPerLine);
 

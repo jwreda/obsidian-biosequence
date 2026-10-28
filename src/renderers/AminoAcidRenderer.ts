@@ -507,7 +507,7 @@ export function renderAminoAcidBlock(
 				cls: "biosequence-search-clear",
 				title: "Clear search",
 			});
-			clearBtn.style.visibility = searchTerm ? "visible" : "hidden";
+			clearBtn.toggleClass("biosequence-invisible", !searchTerm);
 
 			// Store references for deferred handler attachment
 			(searchBarEl as any)._searchInput = searchInput;
@@ -518,7 +518,7 @@ export function renderAminoAcidBlock(
 		// Create seqDiv first, attach selection handlers (they query DOM dynamically),
 		// then populate sequence lines with selectRange available for annotations
 		const seqDiv = container.createDiv({ cls: "biosequence-sequence" });
-		seqDiv.style.fontSize = `${settings.sequenceFontSize}px`;
+		seqDiv.setCssProps({ "--biosequence-font-size": `${settings.sequenceFontSize}px` });
 
 		const selection = attachSelectionHandlers(
 			seqDiv,
@@ -552,7 +552,7 @@ export function renderAminoAcidBlock(
 
 			const updateSearch = (): void => {
 				searchTerm = searchInput.value;
-				clearBtn.style.visibility = searchTerm ? "visible" : "hidden";
+				clearBtn.toggleClass("biosequence-invisible", !searchTerm);
 				const count = applySearchHighlight(
 					seqDiv, parsed.sequence, searchTerm, settings.searchHighlightColor
 				);
