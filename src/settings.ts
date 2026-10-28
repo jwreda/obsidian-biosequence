@@ -98,7 +98,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Amino Acid Sequences" });
+		new Setting(containerEl).setName("Amino acid sequences").setHeading();
 
 		new Setting(containerEl)
 			.setName("Default color scheme")
@@ -115,7 +115,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl("h2", { text: "Nucleotide Sequences" });
+		new Setting(containerEl).setName("Nucleotide sequences").setHeading();
 
 		new Setting(containerEl)
 			.setName("Default DNA color scheme")
@@ -147,7 +147,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl("h2", { text: "Display" });
+		new Setting(containerEl).setName("Display").setHeading();
 
 		new Setting(containerEl)
 			.setName("Max residues per line")
@@ -254,7 +254,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					})
 			);
 
-		containerEl.createEl("h2", { text: "Alignment (MAFFT)" });
+		new Setting(containerEl).setName("Alignment (MAFFT)").setHeading();
 
 		new Setting(containerEl)
 			.setName("MAFFT binary path")
@@ -282,7 +282,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					})
 			);
 
-		containerEl.createEl("h3", { text: "Conservation Symbols" });
+		new Setting(containerEl).setName("Conservation symbols").setHeading();
 		containerEl.createEl("p", {
 			text: "Characters displayed in the conservation row between aligned sequences. Each field accepts a single character. Use a space to leave a position blank.",
 			cls: "setting-item-description",
@@ -370,7 +370,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 	}
 
 	private renderFeatureLibrary(containerEl: HTMLElement): void {
-		containerEl.createEl("h2", { text: "Feature Library" });
+		new Setting(containerEl).setName("Feature library").setHeading();
 		containerEl.createEl("p", {
 			text: "Define sequences to automatically highlight on rendered sequences. Matched by exact substring.",
 			cls: "setting-item-description",
