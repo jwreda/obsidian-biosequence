@@ -221,7 +221,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			.setDesc("How to show feature annotations on sequences")
 			.addDropdown((dropdown) => {
 				dropdown.addOption("ribbons", "Ribbons (below each line)");
-				dropdown.addOption("badges", "Compact Badges (right side)");
+				dropdown.addOption("badges", "Compact badges (right side)");
 				dropdown
 					.setValue(this.plugin.settings.annotationDisplayMode)
 					.onChange(async (value) => {
@@ -380,36 +380,36 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		const toolbar = containerEl.createDiv({ cls: "biosequence-feature-toolbar" });
 
 		if (!this.tsvEditorActive) {
-			const selectAllBtn = toolbar.createEl("button", { text: "Select All" });
-			selectAllBtn.addEventListener("click", async () => {
+			const selectAllBtn = toolbar.createEl("button", { text: "Select all" });
+			selectAllBtn.addEventListener("click", () => void (async () => {
 				for (const f of this.plugin.settings.featureLibrary) f.enabled = true;
 				await this.plugin.saveSettings();
 				this.display();
-			});
+			})());
 
-			const deselectAllBtn = toolbar.createEl("button", { text: "Deselect All" });
-			deselectAllBtn.addEventListener("click", async () => {
+			const deselectAllBtn = toolbar.createEl("button", { text: "Deselect all" });
+			deselectAllBtn.addEventListener("click", () => void (async () => {
 				for (const f of this.plugin.settings.featureLibrary) f.enabled = false;
 				await this.plugin.saveSettings();
 				this.display();
-			});
+			})());
 
-			const addBtn = toolbar.createEl("button", { text: "Add Feature", cls: "mod-cta" });
+			const addBtn = toolbar.createEl("button", { text: "Add feature", cls: "mod-cta" });
 			addBtn.addEventListener("click", () => {
-				new FeatureEditorModal(this.app, null, async (feature) => {
+				new FeatureEditorModal(this.app, null, (feature) => void (async () => {
 					this.plugin.settings.featureLibrary.push(feature);
 					await this.plugin.saveSettings();
 					this.display();
-				}).open();
+				})()).open();
 			});
 
 			const importBtn = toolbar.createEl("button", { text: "Import" });
 			importBtn.addEventListener("click", () => {
-				new FeatureImportModal(this.app, async (features) => {
+				new FeatureImportModal(this.app, (features) => void (async () => {
 					this.plugin.settings.featureLibrary.push(...features);
 					await this.plugin.saveSettings();
 					this.display();
-				}).open();
+				})()).open();
 			});
 		}
 
@@ -430,7 +430,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			type: "text",
 			placeholder: "Filter features\u2026",
 			cls: "biosequence-feature-search-input",
-		}) as HTMLInputElement;
+		});
 		searchInput.value = this.featureFilter;
 
 		const clearBtn = searchBar.createEl("button", {
@@ -445,7 +445,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		if (this.plugin.settings.featureLibrary.length === 0) {
 			listContainer.createEl("p", {
-				text: "No features defined. Click 'Add Feature' or 'Import' to get started.",
+				text: "No features defined. Click 'Add feature' or 'Import' to get started.",
 				cls: "setting-item-description",
 			});
 			return;
@@ -539,7 +539,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		});
 
 		const saveBtn = actions.createEl("button", { text: "Save", cls: "mod-cta" });
-		saveBtn.addEventListener("click", async () => {
+		saveBtn.addEventListener("click", () => void (async () => {
 			const text = textarea.value.trim();
 			if (text.length === 0) {
 				this.plugin.settings.featureLibrary = [];
@@ -550,7 +550,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			await this.plugin.saveSettings();
 			this.tsvEditorActive = false;
 			this.display();
-		});
+		})());
 	}
 
 	private renderFeatureRow(container: HTMLElement, feature: FeatureEntry): void {
@@ -559,25 +559,25 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		row.dataset["featureSeq"] = feature.sequence.toLowerCase();
 
 		// Enable checkbox
-		const checkbox = row.createEl("input", { type: "checkbox" }) as HTMLInputElement;
+		const checkbox = row.createEl("input", { type: "checkbox" });
 		checkbox.checked = feature.enabled;
-		checkbox.addEventListener("change", async () => {
+		checkbox.addEventListener("change", () => void (async () => {
 			feature.enabled = checkbox.checked;
 			await this.plugin.saveSettings();
-		});
+		})());
 
 		// Color swatch + hidden color input
 		const swatch = row.createDiv({ cls: "biosequence-feature-swatch" });
 		swatch.style.backgroundColor = feature.color;
 
-		const colorInput = row.createEl("input", { type: "color" }) as HTMLInputElement;
+		const colorInput = row.createEl("input", { type: "color" });
 		colorInput.value = feature.color;
 		colorInput.addClass("biosequence-hidden");
-		colorInput.addEventListener("input", async () => {
+		colorInput.addEventListener("input", () => void (async () => {
 			feature.color = colorInput.value;
 			swatch.style.backgroundColor = colorInput.value;
 			await this.plugin.saveSettings();
-		});
+		})());
 		swatch.addEventListener("click", () => colorInput.click());
 
 		// Name
@@ -599,7 +599,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		// Edit button
 		const editBtn = row.createEl("button", { cls: "biosequence-feature-btn", text: "Edit" });
 		editBtn.addEventListener("click", () => {
-			new FeatureEditorModal(this.app, feature, async (updated) => {
+			new FeatureEditorModal(this.app, feature, (updated) => void (async () => {
 				const idx = this.plugin.settings.featureLibrary.findIndex(
 					(f) => f.id === updated.id
 				);
@@ -608,7 +608,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 				}
 				await this.plugin.saveSettings();
 				this.display();
-			}).open();
+			})()).open();
 		});
 
 		// Delete button
@@ -616,12 +616,12 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			cls: "biosequence-feature-btn biosequence-feature-btn-danger",
 			text: "Del",
 		});
-		deleteBtn.addEventListener("click", async () => {
+		deleteBtn.addEventListener("click", () => void (async () => {
 			this.plugin.settings.featureLibrary = this.plugin.settings.featureLibrary.filter(
 				(f) => f.id !== feature.id
 			);
 			await this.plugin.saveSettings();
 			this.display();
-		});
+		})());
 	}
 }

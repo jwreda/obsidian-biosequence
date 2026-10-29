@@ -74,11 +74,14 @@ export function attachSelectionHandlers(
 		copyBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			const subseq = sequence.substring(sel.start, sel.end + 1);
-			navigator.clipboard.writeText(subseq);
-			copyBtn.textContent = "Copied!";
-			setTimeout(() => {
-				copyBtn.textContent = "Copy";
-			}, 1500);
+			navigator.clipboard.writeText(subseq).then(() => {
+				copyBtn.textContent = "Copied!";
+				window.setTimeout(() => {
+					copyBtn.textContent = "Copy";
+				}, 1500);
+			}).catch((err) => {
+				console.error("Failed to copy selection:", err);
+			});
 		});
 
 		if (onSearch) {
@@ -193,7 +196,9 @@ export function attachSelectionHandlers(
 				currentSelection.start,
 				currentSelection.end + 1
 			);
-			navigator.clipboard.writeText(subseq);
+			navigator.clipboard.writeText(subseq).catch((err) => {
+				console.error("Failed to copy selection:", err);
+			});
 		}
 	}
 

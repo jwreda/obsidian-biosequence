@@ -203,7 +203,7 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 		gap: "-",
 	},
 	featureLibrary: [],
-	annotationDisplayMode: "ribbons" as AnnotationDisplayMode,
+	annotationDisplayMode: "ribbons",
 	searchHighlightColor: "#FF6D00",
 	frameAnnotationMode: "all",
 };

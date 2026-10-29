@@ -95,7 +95,7 @@ export function renderLineRibbons(
 	const wrapperRect = lineWrapper.getBoundingClientRect();
 
 	for (const lane of lanes) {
-		const ribbonRow = document.createElement("div");
+		const ribbonRow = createDiv();
 		ribbonRow.className = "biosequence-ribbon-row";
 
 		for (const seg of lane) {
@@ -111,7 +111,7 @@ export function renderLineRibbons(
 			const startRect = startEl.getBoundingClientRect();
 			const endRect = endEl.getBoundingClientRect();
 
-			const ribbon = document.createElement("div");
+			const ribbon = createDiv();
 			ribbon.className = "biosequence-ribbon";
 			if (seg.source === "library") {
 				ribbon.classList.add("biosequence-ribbon-library");
@@ -124,7 +124,7 @@ export function renderLineRibbons(
 			// Label if wide enough (>6 characters)
 			const widthChars = clampedEnd - clampedStart;
 			if (widthChars > 6) {
-				const label = document.createElement("span");
+				const label = createSpan();
 				label.className = "biosequence-ribbon-label";
 				label.textContent = seg.name;
 				ribbon.appendChild(label);
@@ -167,20 +167,20 @@ export function renderBadgeBar(
 ): void {
 	if (segments.length === 0) return;
 
-	const badgeBar = document.createElement("div");
+	const badgeBar = createDiv();
 	badgeBar.className = "biosequence-badge-bar";
 
 	for (const seg of segments) {
-		const badge = document.createElement("span");
+		const badge = createSpan();
 		badge.className = "biosequence-badge";
 		badge.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.strand === "-" ? " [reverse strand]" : ""}${seg.source === "library" ? " [library]" : ""}`;
 
-		const dot = document.createElement("span");
+		const dot = createSpan();
 		dot.className = "biosequence-badge-dot";
 		dot.style.backgroundColor = seg.color;
 		badge.appendChild(dot);
 
-		const text = document.createElement("span");
+		const text = createSpan();
 		text.className = "biosequence-badge-text";
 		text.textContent = seg.name;
 		badge.appendChild(text);

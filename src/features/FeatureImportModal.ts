@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+import { App, Modal, Notice } from "obsidian";
 import { FeatureEntry } from "../types";
 import { parseImport, detectFormat } from "./featureImporter";
 
@@ -13,7 +13,7 @@ export class FeatureImportModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.createEl("h2", { text: "Import Features" });
+		contentEl.createEl("h2", { text: "Import features" });
 
 		contentEl.createEl("p", {
 			text: "Paste features in TSV or FASTA format.",

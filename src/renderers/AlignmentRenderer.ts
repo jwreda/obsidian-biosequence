@@ -162,7 +162,7 @@ function renderLegend(
 	const details = container.createEl("details", {
 		cls: "biosequence-legend",
 	});
-	details.createEl("summary", { text: "Color Scheme Legend" });
+	details.createEl("summary", { text: "Color scheme legend" });
 
 	const content = details.createDiv({ cls: "biosequence-legend-content" });
 
@@ -487,12 +487,10 @@ export function renderAlignmentBlock(
 		// Summary statistics
 		let identityCount = 0;
 		let similarCount = 0;
-		let gapCount = 0;
 		for (let i = 0; i < conservation.length; i++) {
 			const ch = conservation.charAt(i);
 			if (ch === "|") identityCount++;
 			else if (ch === ":" || ch === ".") similarCount++;
-			else if (ch === "_") gapCount++;
 		}
 
 		const pctIdentity =

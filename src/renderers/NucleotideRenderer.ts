@@ -194,20 +194,20 @@ function renderToolbar(
 		text: "Copy",
 	});
 
-	copyBtn.addEventListener("click", async () => {
+	copyBtn.addEventListener("click", () => void (async () => {
 		try {
 			await navigator.clipboard.writeText(sequence);
 			const originalText = copyBtn.textContent;
 			copyBtn.textContent = "Copied!";
 			copyBtn.addClass("copied");
-			setTimeout(() => {
+			window.setTimeout(() => {
 				copyBtn.textContent = originalText;
 				copyBtn.removeClass("copied");
 			}, 1500);
 		} catch (err) {
 			console.error("Failed to copy sequence:", err);
 		}
-	});
+	})());
 
 	// Display mode toggle
 	const modeBtn = toolbar.createEl("button", {
@@ -263,7 +263,7 @@ function renderLegend(
 	const details = container.createEl("details", {
 		cls: "biosequence-legend",
 	});
-	details.createEl("summary", { text: "Color Scheme Legend" });
+	details.createEl("summary", { text: "Color scheme legend" });
 
 	const content = details.createDiv({ cls: "biosequence-legend-content" });
 
@@ -557,14 +557,14 @@ export function renderNucleotideBlock(
 		renderLegend(container, currentSchemeId);
 
 		// Search bar (only when search scheme is active)
-		let searchBarEl: HTMLElement | null = null;
+		let searchUI: { searchInput: HTMLInputElement; matchInfo: HTMLElement; clearBtn: HTMLElement } | null = null;
 		if (currentSchemeId === "search") {
-			searchBarEl = container.createDiv({ cls: "biosequence-search-bar" });
+			const searchBarEl = container.createDiv({ cls: "biosequence-search-bar" });
 			const searchInput = searchBarEl.createEl("input", {
 				type: "text",
 				placeholder: "Search sequence\u2026",
 				cls: "biosequence-search-input",
-			}) as HTMLInputElement;
+			});
 			searchInput.value = searchTerm;
 
 			const matchInfo = searchBarEl.createSpan({ cls: "biosequence-search-match-info" });
@@ -576,9 +576,7 @@ export function renderNucleotideBlock(
 			});
 			clearBtn.toggleClass("biosequence-invisible", !searchTerm);
 
-			(searchBarEl as any)._searchInput = searchInput;
-			(searchBarEl as any)._matchInfo = matchInfo;
-			(searchBarEl as any)._clearBtn = clearBtn;
+			searchUI = { searchInput, matchInfo, clearBtn };
 		}
 
 		// Create seqDiv first, attach selection handlers (they query DOM dynamically),
@@ -612,10 +610,8 @@ export function renderNucleotideBlock(
 		);
 
 		// Attach search handlers after sequence is rendered
-		if (searchBarEl && currentSchemeId === "search") {
-			const searchInput = (searchBarEl as any)._searchInput as HTMLInputElement;
-			const matchInfo = (searchBarEl as any)._matchInfo as HTMLElement;
-			const clearBtn = (searchBarEl as any)._clearBtn as HTMLElement;
+		if (searchUI) {
+			const { searchInput, matchInfo, clearBtn } = searchUI;
 
 			const updateSearch = (): void => {
 				searchTerm = searchInput.value;
