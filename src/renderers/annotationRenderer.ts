@@ -119,7 +119,7 @@ export function renderLineRibbons(
 			ribbon.style.left = `${startRect.left - wrapperRect.left}px`;
 			ribbon.style.width = `${endRect.right - startRect.left}px`;
 			ribbon.style.backgroundColor = seg.color;
-			ribbon.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.source === "library" ? " [library]" : ""}`;
+			ribbon.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.strand === "-" ? " [reverse strand]" : ""}${seg.source === "library" ? " [library]" : ""}`;
 
 			// Label if wide enough (>6 characters)
 			const widthChars = clampedEnd - clampedStart;
@@ -173,7 +173,7 @@ export function renderBadgeBar(
 	for (const seg of segments) {
 		const badge = document.createElement("span");
 		badge.className = "biosequence-badge";
-		badge.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.source === "library" ? " [library]" : ""}`;
+		badge.title = `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.strand === "-" ? " [reverse strand]" : ""}${seg.source === "library" ? " [library]" : ""}`;
 
 		const dot = document.createElement("span");
 		dot.className = "biosequence-badge-dot";
@@ -230,7 +230,7 @@ export function renderAnnotationLegend(
 		}
 		item.createSpan({
 			cls: "biosequence-annotation-legend-text",
-			text: `${seg.name} (${seg.start + 1}\u2013${seg.end})`,
+			text: `${seg.name} (${seg.start + 1}\u2013${seg.end})${seg.strand === "-" ? " \u2190" : ""}`,
 		});
 		if (seg.source === "library") {
 			item.createSpan({

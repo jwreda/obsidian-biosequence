@@ -1,4 +1,4 @@
-import { Notice, Platform, Plugin } from "obsidian";
+import { MarkdownPostProcessorContext, MarkdownRenderChild, Notice, Platform, Plugin } from "obsidian";
 import { BiosequenceSettings, DEFAULT_SETTINGS, FeatureEntry } from "./types";
 import { BiosequenceSettingTab } from "./settings";
 import { renderAminoAcidBlock } from "./renderers/AminoAcidRenderer";
@@ -9,28 +9,38 @@ import { runMafft } from "./alignment/mafftRunner";
 import { parseFasta } from "./alignment/fastaParser";
 import { computeConservation } from "./alignment/conservation";
 
+/**
+ * Tie a rendered block's observers and document listeners to the block's
+ * lifetime, so they are released when the note re-renders or closes.
+ */
+function bindLifecycle(el: HTMLElement, ctx: MarkdownPostProcessorContext, cleanup: () => void): void {
+	const child = new MarkdownRenderChild(el);
+	child.register(cleanup);
+	ctx.addChild(child);
+}
+
 export default class BiosequencePlugin extends Plugin {
 	settings: BiosequenceSettings = DEFAULT_SETTINGS;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
-		const aaHandler = (source: string, el: HTMLElement): void => {
-			renderAminoAcidBlock(source, el, this.settings);
+		const aaHandler = (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
+			bindLifecycle(el, ctx, renderAminoAcidBlock(source, el, this.settings));
 		};
 		for (const tag of ["aa", "AA", "Aa"]) {
 			this.registerMarkdownCodeBlockProcessor(tag, aaHandler);
 		}
 
-		const dnaHandler = (source: string, el: HTMLElement): void => {
-			renderNucleotideBlock(source, el, "dna", this.settings);
+		const dnaHandler = (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
+			bindLifecycle(el, ctx, renderNucleotideBlock(source, el, "dna", this.settings));
 		};
 		for (const tag of ["dna", "DNA", "Dna"]) {
 			this.registerMarkdownCodeBlockProcessor(tag, dnaHandler);
 		}
 
-		const rnaHandler = (source: string, el: HTMLElement): void => {
-			renderNucleotideBlock(source, el, "rna", this.settings);
+		const rnaHandler = (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
+			bindLifecycle(el, ctx, renderNucleotideBlock(source, el, "rna", this.settings));
 		};
 		for (const tag of ["rna", "RNA", "Rna"]) {
 			this.registerMarkdownCodeBlockProcessor(tag, rnaHandler);
@@ -39,8 +49,8 @@ export default class BiosequencePlugin extends Plugin {
 		this.addSettingTab(new BiosequenceSettingTab(this.app, this));
 
 		// Register alignment code block processor
-		this.registerMarkdownCodeBlockProcessor("alignment", (source, el) => {
-			renderAlignmentBlock(source, el, this.settings);
+		this.registerMarkdownCodeBlockProcessor("alignment", (source, el, ctx) => {
+			bindLifecycle(el, ctx, renderAlignmentBlock(source, el, this.settings));
 		});
 
 		// Register alignment command (desktop only -- requires child_process)

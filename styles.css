@@ -124,6 +124,7 @@
 	word-break: break-all;
 	margin-bottom: 12px;
 	line-height: 1.8;
+	font-size: var(--biosequence-font-size);
 }
 
 /* Each line of residues */
@@ -1136,4 +1137,13 @@
 	outline-offset: 1px;
 	filter: brightness(1.1);
 	z-index: 1;
+}
+
+/* Utility classes toggled from code instead of inline styles */
+.biosequence-hidden {
+	display: none;
+}
+
+.biosequence-invisible {
+	visibility: hidden;
 }

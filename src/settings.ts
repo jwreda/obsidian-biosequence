@@ -98,7 +98,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Amino Acid Sequences" });
+		new Setting(containerEl).setName("Amino acid sequences").setHeading();
 
 		new Setting(containerEl)
 			.setName("Default color scheme")
@@ -115,7 +115,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl("h2", { text: "Nucleotide Sequences" });
+		new Setting(containerEl).setName("Nucleotide sequences").setHeading();
 
 		new Setting(containerEl)
 			.setName("Default DNA color scheme")
@@ -147,7 +147,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl("h2", { text: "Display" });
+		new Setting(containerEl).setName("Display").setHeading();
 
 		new Setting(containerEl)
 			.setName("Max residues per line")
@@ -254,7 +254,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					})
 			);
 
-		containerEl.createEl("h2", { text: "Alignment (MAFFT)" });
+		new Setting(containerEl).setName("Alignment (MAFFT)").setHeading();
 
 		new Setting(containerEl)
 			.setName("MAFFT binary path")
@@ -282,7 +282,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 					})
 			);
 
-		containerEl.createEl("h3", { text: "Conservation Symbols" });
+		new Setting(containerEl).setName("Conservation symbols").setHeading();
 		containerEl.createEl("p", {
 			text: "Characters displayed in the conservation row between aligned sequences. Each field accepts a single character. Use a space to leave a position blank.",
 			cls: "setting-item-description",
@@ -370,7 +370,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 	}
 
 	private renderFeatureLibrary(containerEl: HTMLElement): void {
-		containerEl.createEl("h2", { text: "Feature Library" });
+		new Setting(containerEl).setName("Feature library").setHeading();
 		containerEl.createEl("p", {
 			text: "Define sequences to automatically highlight on rendered sequences. Matched by exact substring.",
 			cls: "setting-item-description",
@@ -438,7 +438,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 			cls: "biosequence-feature-search-clear",
 			title: "Clear filter",
 		});
-		clearBtn.style.visibility = this.featureFilter ? "visible" : "hidden";
+		clearBtn.toggleClass("biosequence-invisible", !this.featureFilter);
 
 		// Feature list
 		const listContainer = containerEl.createDiv({ cls: "biosequence-feature-list" });
@@ -459,12 +459,12 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 		const filterRows = (): void => {
 			const term = searchInput.value.toLowerCase();
 			this.featureFilter = term;
-			clearBtn.style.visibility = term ? "visible" : "hidden";
+			clearBtn.toggleClass("biosequence-invisible", !term);
 			const rows = listContainer.querySelectorAll<HTMLElement>(".biosequence-feature-row");
 			for (const row of Array.from(rows)) {
 				const name = row.dataset["featureName"] ?? "";
 				const seq = row.dataset["featureSeq"] ?? "";
-				row.style.display = (name.includes(term) || seq.includes(term)) ? "" : "none";
+				row.toggleClass("biosequence-hidden", !(name.includes(term) || seq.includes(term)));
 			}
 		};
 
@@ -572,7 +572,7 @@ export class BiosequenceSettingTab extends PluginSettingTab {
 
 		const colorInput = row.createEl("input", { type: "color" }) as HTMLInputElement;
 		colorInput.value = feature.color;
-		colorInput.style.display = "none";
+		colorInput.addClass("biosequence-hidden");
 		colorInput.addEventListener("input", async () => {
 			feature.color = colorInput.value;
 			swatch.style.backgroundColor = colorInput.value;

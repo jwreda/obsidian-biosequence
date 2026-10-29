@@ -1,8 +1,11 @@
+import { reverseComplement } from "../calculations/translation";
 import { AnnotatedSegment, FeatureEntry, FeatureMatch, Segment, SequenceType } from "../types";
 
 /**
  * Find all occurrences of enabled library features in the given sequence.
- * Filters by type, finds all substring matches including overlapping positions.
+ * Finds all substring matches including overlapping positions. Nucleotide
+ * features match either DNA or RNA blocks (T and U are treated as
+ * equivalent), and DNA blocks are also searched on the reverse strand.
  */
 export function matchFeatures(
 	sequence: string,
@@ -10,34 +13,78 @@ export function matchFeatures(
 	sequenceType: SequenceType
 ): FeatureMatch[] {
 	const matches: FeatureMatch[] = [];
-	const upperSeq = sequence.toUpperCase();
+	const isNucleotide = sequenceType !== "aa";
+	const upperSeq = isNucleotide
+		? sequence.toUpperCase().replace(/U/g, "T")
+		: sequence.toUpperCase();
 
 	for (const feature of features) {
 		if (!feature.enabled) continue;
-		if (feature.type !== sequenceType) continue;
+		if (isNucleotide ? feature.type === "aa" : feature.type !== "aa") continue;
 
-		const featureSeq = feature.sequence.toUpperCase();
+		const featureSeq = isNucleotide
+			? feature.sequence.toUpperCase().replace(/U/g, "T")
+			: feature.sequence.toUpperCase();
 		if (featureSeq.length === 0 || featureSeq.length > upperSeq.length) continue;
 
-		let searchFrom = 0;
-		while (searchFrom <= upperSeq.length - featureSeq.length) {
-			const idx = upperSeq.indexOf(featureSeq, searchFrom);
-			if (idx === -1) break;
-
+		const push = (start: number, strand?: "+" | "-"): void => {
 			matches.push({
 				featureId: feature.id,
 				name: feature.name,
-				start: idx,
-				end: idx + featureSeq.length,
+				start,
+				end: start + featureSeq.length,
 				color: feature.color,
 				source: "library",
+				...(strand ? { strand } : {}),
 			});
+		};
 
-			searchFrom = idx + 1;
+		if (!isNucleotide) {
+			for (const idx of findAll(upperSeq, featureSeq)) push(idx);
+			continue;
+		}
+
+		const forward = findAll(upperSeq, featureSeq);
+		for (const idx of forward) push(idx, "+");
+
+		// RNA is single-stranded, so only DNA has a reverse strand to search.
+		// Skip palindromes too: their reverse hits are the same sites.
+		if (sequenceType === "dna") {
+			const rc = reverseComplement(featureSeq);
+			if (rc !== featureSeq) {
+				for (const idx of findAll(upperSeq, rc)) push(idx, "-");
+			}
 		}
 	}
 
-	return matches;
+	return dedupeMatches(matches);
+}
+
+/**
+ * Drop repeat hits for the same named feature at the same span and strand,
+ * e.g. when a library holds both DNA and RNA versions of one feature.
+ */
+function dedupeMatches(matches: FeatureMatch[]): FeatureMatch[] {
+	const seen = new Set<string>();
+	return matches.filter((m) => {
+		const key = `${m.name}\u0000${m.start}\u0000${m.end}\u0000${m.strand ?? ""}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+/** All (overlapping) start positions of needle in haystack. */
+function findAll(haystack: string, needle: string): number[] {
+	const positions: number[] = [];
+	let from = 0;
+	while (from <= haystack.length - needle.length) {
+		const idx = haystack.indexOf(needle, from);
+		if (idx === -1) break;
+		positions.push(idx);
+		from = idx + 1;
+	}
+	return positions;
 }
 
 /**
@@ -65,6 +112,7 @@ export function mergeSegments(
 			color: match.color,
 			source: "library",
 			featureId: match.featureId,
+			...(match.strand ? { strand: match.strand } : {}),
 		});
 	}
 
