@@ -224,9 +224,18 @@ Download from [MAFFT website](https://mafft.cbrc.jp/alignment/software/) and add
 
 A new note will be created with the alignment in an `alignment` code block.
 
+### What the alignment feature accesses
+
+Running an alignment is the only time the plugin works outside your vault, and only on desktop:
+
+- It writes your two sequences to a temporary FASTA file in the system temp folder, and deletes it when MAFFT finishes.
+- It runs the MAFFT program at the path set in settings (`mafft` by default) as a separate process.
+
+Nothing is sent over the network. If you never run the alignment command, neither happens.
+
 ## Compatibility
 
-- **Obsidian version**: 1.0.0 or higher
+- **Obsidian version**: 1.5.0 or higher
 - **Platforms**: Desktop (macOS, Windows, Linux) and mobile (iOS, Android)
   - Alignment feature is desktop-only due to MAFFT requirement
 - **Themes**: Fully compatible with light and dark themes (uses Obsidian CSS variables)
