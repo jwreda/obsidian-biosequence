@@ -206,8 +206,6 @@ export class AlignmentModal extends Modal {
 		const ctaRow = contentEl.createDiv({
 			cls: "biosequence-alignment-cta-row",
 		});
-		ctaRow.style.marginTop = "16px";
-		ctaRow.style.textAlign = "right";
 
 		const alignBtn = ctaRow.createEl("button", {
 			text: "Align",
