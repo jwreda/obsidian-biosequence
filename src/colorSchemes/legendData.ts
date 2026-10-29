@@ -1,4 +1,4 @@
-import { AAColorSchemeId, NucleotideColorSchemeId, LegendGroup, ColorSchemeMetadata } from "../types";
+import { AAColorSchemeId, NucleotideColorSchemeId, ColorSchemeMetadata } from "../types";
 
 export const AA_LEGEND_DATA: Record<AAColorSchemeId, ColorSchemeMetadata> = {
 	unique: {

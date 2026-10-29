@@ -28,7 +28,7 @@ export function createReflowObserver(
 	const gutterWidth = 3.5 * 0.8 * fontSize + 8;
 
 	let lastWidth = 0;
-	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let debounceTimer: number | null = null;
 
 	function computeResiduesPerLine(containerWidth: number): number {
 		let availableWidth = containerWidth;
@@ -65,10 +65,10 @@ export function createReflowObserver(
 			lastWidth = width;
 
 			if (debounceTimer !== null) {
-				clearTimeout(debounceTimer);
+				window.clearTimeout(debounceTimer);
 			}
 
-			debounceTimer = setTimeout(() => {
+			debounceTimer = window.setTimeout(() => {
 				const residuesPerLine = computeResiduesPerLine(width);
 				onReflow(residuesPerLine);
 				debounceTimer = null;
@@ -82,7 +82,7 @@ export function createReflowObserver(
 	const disconnect = observer.disconnect.bind(observer);
 	observer.disconnect = () => {
 		if (debounceTimer !== null) {
-			clearTimeout(debounceTimer);
+			window.clearTimeout(debounceTimer);
 			debounceTimer = null;
 		}
 		disconnect();

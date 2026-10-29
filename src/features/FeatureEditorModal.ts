@@ -21,7 +21,7 @@ export class FeatureEditorModal extends Modal {
 					id: crypto.randomUUID(),
 					name: "",
 					sequence: "",
-					type: "aa" as SequenceType,
+					type: "aa",
 					color:
 						SEGMENT_PALETTE[
 							Math.floor(Math.random() * SEGMENT_PALETTE.length)
@@ -34,7 +34,7 @@ export class FeatureEditorModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h2", {
-			text: this.isNew ? "Add Feature" : "Edit Feature",
+			text: this.isNew ? "Add feature" : "Edit feature",
 		});
 
 		new Setting(contentEl)
@@ -69,7 +69,7 @@ export class FeatureEditorModal extends Modal {
 			.setName("Type")
 			.setDesc("Sequence type")
 			.addDropdown((dd) => {
-				dd.addOption("aa", "Amino Acid");
+				dd.addOption("aa", "Amino acid");
 				dd.addOption("dna", "DNA");
 				dd.addOption("rna", "RNA");
 				dd.setValue(this.feature.type).onChange((v) => {

@@ -1,9 +1,4 @@
-// Node built-ins are loaded lazily inside runMafft so the plugin still loads
-// on mobile, where they don't exist. Only the types are imported here.
-import type * as ChildProcess from "child_process";
-import type * as Fs from "fs";
-import type * as Os from "os";
-import type * as Path from "path";
+import { Platform } from "obsidian";
 
 /**
  * Run MAFFT pairwise alignment on two sequences.
@@ -18,21 +13,24 @@ import type * as Path from "path";
  * @param mafftPath - Path to the MAFFT binary (default: "mafft")
  * @returns The aligned multi-FASTA string from MAFFT stdout
  */
-export function runMafft(
+export async function runMafft(
 	seq1: string,
 	seq2: string,
 	header1: string,
 	header2: string,
 	mafftPath: string
 ): Promise<string> {
-	/* eslint-disable @typescript-eslint/no-var-requires */
-	const { execFile } = require("child_process") as typeof ChildProcess;
-	const { writeFileSync, unlinkSync } = require("fs") as typeof Fs;
-	const { tmpdir } = require("os") as typeof Os;
-	const { join, delimiter } = require("path") as typeof Path;
-	/* eslint-enable @typescript-eslint/no-var-requires */
+	// Node built-ins are loaded lazily, behind the desktop check, so the
+	// plugin still loads on mobile where they don't exist.
+	if (!Platform.isDesktop) {
+		throw new Error("MAFFT alignment is only available on desktop");
+	}
+	const { execFile } = await import("child_process");
+	const { writeFileSync, unlinkSync } = await import("fs");
+	const { tmpdir } = await import("os");
+	const path = await import("path");
 
-	const tmpFile = join(
+	const tmpFile = path.join(
 		tmpdir(),
 		`biosequence-mafft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.fasta`
 	);
@@ -51,7 +49,7 @@ export function runMafft(
 	const extraDirs = process.platform === "win32"
 		? []
 		: ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"];
-	const augmentedPath = [...extraDirs, process.env.PATH ?? ""].join(delimiter);
+	const augmentedPath = [...extraDirs, process.env.PATH ?? ""].join(path.delimiter);
 
 	return new Promise<string>((resolve, reject) => {
 		const child = execFile(

@@ -1147,3 +1147,8 @@
 .biosequence-invisible {
 	visibility: hidden;
 }
+
+.biosequence-alignment-cta-row {
+	margin-top: 16px;
+	text-align: right;
+}

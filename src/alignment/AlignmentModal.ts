@@ -145,14 +145,14 @@ export class AlignmentModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl("h2", { text: "Pairwise Sequence Alignment" });
+		contentEl.createEl("h2", { text: "Pairwise sequence alignment" });
 
 		// Sequence type dropdown
 		new Setting(contentEl)
 			.setName("Sequence type")
 			.setDesc("Select the type of sequences to align")
 			.addDropdown((dropdown) => {
-				dropdown.addOption("aa", "Amino Acid (AA)");
+				dropdown.addOption("aa", "Amino acid (AA)");
 				dropdown.addOption("dna", "DNA");
 				dropdown.addOption("rna", "RNA");
 				dropdown.setValue(this.seqType).onChange((value) => {
@@ -206,8 +206,6 @@ export class AlignmentModal extends Modal {
 		const ctaRow = contentEl.createDiv({
 			cls: "biosequence-alignment-cta-row",
 		});
-		ctaRow.style.marginTop = "16px";
-		ctaRow.style.textAlign = "right";
 
 		const alignBtn = ctaRow.createEl("button", {
 			text: "Align",
@@ -232,7 +230,7 @@ export class AlignmentModal extends Modal {
 			.getFiles()
 			.filter((f) => f.extension === "md");
 
-		new FileSuggestModal(this.app, mdFiles, async (file: TFile) => {
+		new FileSuggestModal(this.app, mdFiles, (file: TFile) => void (async () => {
 			const content = await this.app.vault.read(file);
 			const blocks = extractBiosequenceBlocks(content);
 
@@ -253,7 +251,7 @@ export class AlignmentModal extends Modal {
 					}
 				).open();
 			}
-		}).open();
+		})()).open();
 	}
 
 	/**
@@ -290,7 +288,7 @@ export class AlignmentModal extends Modal {
 			block.type === "rna" ||
 			block.type === "aa"
 		) {
-			this.seqType = block.type as SequenceType;
+			this.seqType = block.type;
 		}
 	}
 

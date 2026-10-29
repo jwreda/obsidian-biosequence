@@ -7,7 +7,6 @@ import { renderAlignmentBlock } from "./renderers/AlignmentRenderer";
 import { AlignmentModal } from "./alignment/AlignmentModal";
 import { runMafft } from "./alignment/mafftRunner";
 import { parseFasta } from "./alignment/fastaParser";
-import { computeConservation } from "./alignment/conservation";
 
 /**
  * Tie a rendered block's observers and document listeners to the block's
@@ -56,10 +55,10 @@ export default class BiosequencePlugin extends Plugin {
 		// Register alignment command (desktop only -- requires child_process)
 		if (Platform.isDesktop) {
 			this.addCommand({
-				id: "biosequence-align",
+				id: "align",
 				name: "Align two sequences (MAFFT)",
 				callback: () => {
-					new AlignmentModal(this.app, async (seq1, seq2, header1, header2, seqType) => {
+					new AlignmentModal(this.app, (seq1, seq2, header1, header2, seqType) => void (async () => {
 						try {
 							const rawOutput = await runMafft(
 								seq1, seq2, header1, header2,
@@ -70,10 +69,6 @@ export default class BiosequencePlugin extends Plugin {
 								throw new Error("MAFFT returned fewer than 2 sequences");
 							}
 
-							const conservation = computeConservation(
-								entries[0]!.sequence,
-								entries[1]!.sequence
-							);
 
 							// Generate output file
 							const outputDir = this.settings.alignmentOutputDir;
@@ -113,21 +108,22 @@ export default class BiosequencePlugin extends Plugin {
 
 							const file = await this.app.vault.create(filename, content);
 							const leaf = this.app.workspace.getLeaf(false);
-							await leaf.openFile(file as any);
+							await leaf.openFile(file);
 							new Notice(`Alignment saved to ${filename}`);
 						} catch (e) {
 							new Notice(
 								`Alignment failed: ${(e as Error).message}`
 							);
 						}
-					}).open();
+					})()).open();
 				},
 			});
 		}
 	}
 
 	async loadSettings(): Promise<void> {
-		const saved = await this.loadData();
+		const saved = (await this.loadData()) as
+			(Partial<BiosequenceSettings> & { showFrameAnnotations?: boolean }) | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 		// Deep-merge nested objects to handle partial saves
 		this.settings.conservationSymbols = Object.assign(
@@ -151,8 +147,8 @@ export default class BiosequencePlugin extends Plugin {
 		// One-time migration: showFrameAnnotations (boolean) → frameAnnotationMode
 		// True maps to the "all" mode; false maps to "none". Drop the old key.
 		if (saved && Object.prototype.hasOwnProperty.call(saved, "showFrameAnnotations")
-			&& !(saved as any).frameAnnotationMode) {
-			this.settings.frameAnnotationMode = (saved as any).showFrameAnnotations
+			&& !saved.frameAnnotationMode) {
+			this.settings.frameAnnotationMode = saved.showFrameAnnotations
 				? "all"
 				: "none";
 			await this.saveSettings();

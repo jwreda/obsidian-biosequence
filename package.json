@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-biosequence",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Biological sequence viewer for Obsidian with per-residue coloring and biophysical calculations.",
 	"main": "main.js",
 	"type": "module",

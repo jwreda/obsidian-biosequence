@@ -93,7 +93,7 @@ export function renderFrameAnnotations(
 
 		// Always render the row for visible frames (even if no codons land here),
 		// so frame ordering / label column stays stable line-to-line.
-		const row = document.createElement("div");
+		const row = createDiv();
 		row.className = "biosequence-frame-row";
 
 		// Mirror the DNA line's gutter presence so the cells container starts
@@ -101,14 +101,14 @@ export function renderFrameAnnotations(
 		// numbers are off, the DNA line has no gutter, so we omit the frame
 		// label too and surface the frame ID via the row's title attribute.
 		if (settings.showPositionNumbers) {
-			const label = document.createElement("span");
+			const label = createSpan();
 			label.className = "biosequence-frame-label";
 			label.textContent = frameId;
 			row.appendChild(label);
 		}
 		row.title = `Frame ${frameId}`;
 
-		const cells = document.createElement("div");
+		const cells = createDiv();
 		cells.className = "biosequence-frame-cells";
 		row.appendChild(cells);
 
@@ -137,7 +137,7 @@ export function renderFrameAnnotations(
 			const anchorLeft = leftByPos.get(ntStart);
 			if (anchorLeft === undefined) continue;
 
-			const cell = document.createElement("div");
+			const cell = createDiv();
 			cell.className = "biosequence-frame-cell";
 			cell.textContent = codon.aa;
 			cell.style.left = `${anchorLeft - cellsRect.left}px`;
