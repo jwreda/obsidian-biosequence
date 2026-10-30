@@ -39,6 +39,7 @@ All color schemes include:
 ### Biophysical Property Calculations
 
 **For Amino Acid Sequences:**
+
 | Property | Algorithm | Reference |
 |----------|-----------|-----------|
 | Molecular Weight | Sum of residue weights + H₂O | Standard amino acid weights |
@@ -53,6 +54,7 @@ All color schemes include:
 | Amino Acid Composition | Count and percentage per residue | Collapsible table |
 
 **For Nucleotide Sequences:**
+
 | Property | Description |
 |----------|-------------|
 | Length | Total nucleotides |
@@ -192,7 +194,7 @@ All settings are configurable via Settings → BioSequence:
 | Assume disulfide bonds | For extinction coefficient calculation | Disabled |
 | MAFFT binary path | Path to MAFFT executable | `mafft` |
 | Alignment output directory | Where to save alignment notes | `BioSequence/alignments` |
-| Conservation symbols | Customize alignment symbols | `|`, `:`, `.`, `X`, `-` |
+| Conservation symbols | Customize alignment symbols | `\|`, `:`, `.`, `X`, `-` |
 | Feature Library | Manage auto-matching motifs | Empty |
 
 ## MAFFT Alignment Setup
