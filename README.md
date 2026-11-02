@@ -106,6 +106,9 @@ A persistent library of named sequence motifs that auto-highlight on rendered se
 - **Bulk import** — import multiple features from structured text
 - **Quick toggles** — select all / deselect all
 - **Visual distinction** — library features render with dashed border
+- **Syncs with your vault** — the library is stored in a note (`BioSequence/Feature library.md` by default) instead of the plugin's `data.json`, so Obsidian Sync, iCloud or git carry it to your other devices like any other note. You can also edit the table in that note directly; the plugin picks up changes, including ones that arrive by sync.
+
+Upgrading from 0.1.1 or earlier moves your existing library into the note automatically the first time the plugin loads. If two devices each had their own library, the plugin merges them (entries with the same name, sequence and type are kept once). Update and open one device first, let the note sync, then update the others.
 
 ### Interactive Selection
 - **Click and drag** to select residue ranges
@@ -196,6 +199,7 @@ All settings are configurable via Settings → BioSequence:
 | Alignment output directory | Where to save alignment notes | `BioSequence/alignments` |
 | Conservation symbols | Customize alignment symbols | `\|`, `:`, `.`, `X`, `-` |
 | Feature Library | Manage auto-matching motifs | Empty |
+| Library note | Vault note that stores the feature library (use the same path on every device) | `BioSequence/Feature library.md` |
 
 ## MAFFT Alignment Setup
 
