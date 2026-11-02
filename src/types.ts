@@ -114,7 +114,7 @@ export interface AnnotatedSegment extends Segment {
 /** Display mode for sequence annotations */
 export type AnnotationDisplayMode = "ribbons" | "badges";
 
-/** Plugin settings persisted to data.json */
+/** Plugin settings (persisted to data.json, except the feature library) */
 export interface BiosequenceSettings {
 	defaultAAScheme: AAColorSchemeId;
 	defaultDNAScheme: NucleotideColorSchemeId;
@@ -127,7 +127,13 @@ export interface BiosequenceSettings {
 	mafftPath: string;
 	alignmentOutputDir: string;
 	conservationSymbols: ConservationSymbols;
+	/**
+	 * Feature library. Kept in memory here, but stored in the vault note at
+	 * `featureLibraryPath` (not in data.json) so that sync carries it.
+	 */
 	featureLibrary: FeatureEntry[];
+	/** Vault path of the note that stores the feature library */
+	featureLibraryPath: string;
 	annotationDisplayMode: AnnotationDisplayMode;
 	searchHighlightColor: string;
 	frameAnnotationMode: FrameAnnotationMode;
@@ -203,6 +209,7 @@ export const DEFAULT_SETTINGS: BiosequenceSettings = {
 		gap: "-",
 	},
 	featureLibrary: [],
+	featureLibraryPath: "BioSequence/Feature library.md",
 	annotationDisplayMode: "ribbons",
 	searchHighlightColor: "#FF6D00",
 	frameAnnotationMode: "all",
